@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -11,45 +13,72 @@ import (
 )
 
 // KeyConfig edustaa yksittäistä avainta keystore-muodossa.
+// KeyConfig edustaa yksittäistä avainta keystore-muodossa.// KeyConfig edustaa yksittäistä avainta keystore-muodossa.
 type KeyConfig struct {
-	Type string       `tfsdk:"type"`
-	Size int          `tfsdk:"size"`
+	Type string       `tfsdk:"type"` // Esim. "RSA" tai "EC"
+	Size types.Int32  `tfsdk:"size"` // Käytetään RSA-avaimille
 	KID  string       `tfsdk:"kid"`
 	Use  string       `tfsdk:"use"`
-	Alg  types.String `tfsdk:"alg"` // Alg voi olla null, joten käytetään Terraformin types.String -tyyppiä.
+	Alg  types.String `tfsdk:"alg"` // Algoritmi; voi olla null
+	Crv  types.String `tfsdk:"crv"` // Käyrä, esim. "P-256" (vaaditaan EC-avaimille)
 }
 
 // KeystoreConfig määrittää käyttäjän syöttämät parametrit, mukaan lukien avainlista
-// ja generoidun keystore_json -arvon.
+// ja generoidun keystore_json-arvon.
 type KeystoreConfig struct {
 	Keys         []KeyConfig  `tfsdk:"keys"`
 	KeystoreJSON types.String `tfsdk:"keystore_json"`
 }
 
-// CreateRSAKeystore luo keystore JSON-muodossa annetun avainlistan perusteella.
-func CreateRSAKeystore(config []KeyConfig) (string, error) {
+// CreateJWKKeystore luo keystore JSON-muodossa annetun avainlistan perusteella.
+func CreateJWKKeystore(config []KeyConfig) (string, error) {
 	keystore := jose.JSONWebKeySet{}
 
 	// Käy läpi kaikki avaimet
 	for _, key := range config {
-		if key.Type != "RSA" {
-			return "", fmt.Errorf("unsupported key type: %s", key.Type)
-		}
+		switch key.Type {
+		case "RSA":
+			if !key.Crv.IsNull() {
+				return "", fmt.Errorf("RSA key must not specify a curve (crv)")
+			}
 
-		// Muunna key.Alg (tyyppi types.String) tavalliseksi stringiksi.
-		var alg string
-		if key.Alg.IsNull() {
-			alg = ""
-		} else {
-			alg = key.Alg.ValueString()
-		}
+			size := int(key.Size.ValueInt32()) // Convert types.Int32 to int
+			// Muunna key.Alg (tyyppi types.String) tavalliseksi stringiksi.
+			var alg string
+			if key.Alg.IsNull() {
+				alg = ""
+			} else {
+				alg = key.Alg.ValueString()
+			}
+			jwk, err := generateRSAJWK(size, key.KID, key.Use, alg)
+			if err != nil {
+				return "", err
+			}
+			keystore.Keys = append(keystore.Keys, *jwk)
+		case "EC":
+			if !key.Size.IsNull() {
+				return "", fmt.Errorf("EC key must not specify a size")
+			}
 
-		jwk, err := generateJWK(key.Size, key.KID, key.Use, alg)
-		if err != nil {
-			return "", err
+			// EC-avaimille vaaditaan käyrä.
+			if key.Crv.IsNull() {
+				return "", fmt.Errorf("EC key must specify a curve (crv)")
+			}
+			crv := key.Crv.ValueString()
+			var alg string
+			if key.Alg.IsNull() {
+				alg = ""
+			} else {
+				alg = key.Alg.ValueString()
+			}
+			jwk, err := generateECJWK(key.KID, key.Use, alg, crv)
+			if err != nil {
+				return "", err
+			}
+			keystore.Keys = append(keystore.Keys, *jwk)
+		default:
+			return "", fmt.Errorf("unsupported key type: %s. Type must be one of [RSA, EC]", key.Type)
 		}
-
-		keystore.Keys = append(keystore.Keys, *jwk)
 	}
 
 	// Muunnetaan keystore JSON-muotoon
@@ -61,8 +90,8 @@ func CreateRSAKeystore(config []KeyConfig) (string, error) {
 	return string(keystoreJSON), nil
 }
 
-// generateJWK luo yksittäisen RSA-avaimen.
-func generateJWK(bits int, kid, use, alg string) (*jose.JSONWebKey, error) {
+// generateRSAJWK luo RSA-avaimen.
+func generateRSAJWK(bits int, kid, use, alg string) (*jose.JSONWebKey, error) {
 	privKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		return nil, err
@@ -74,4 +103,38 @@ func generateJWK(bits int, kid, use, alg string) (*jose.JSONWebKey, error) {
 		Algorithm: alg,
 		KeyID:     kid,
 	}, nil
+}
+
+// generateECJWK luo EC-avaimen käyttäen annettua käyrää (crv).
+func generateECJWK(kid, use, alg, crv string) (*jose.JSONWebKey, error) {
+	curve, err := getEllipticCurve(crv)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey, err := ecdsa.GenerateKey(curve, rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return &jose.JSONWebKey{
+		Key:       privKey,
+		Use:       use,
+		Algorithm: alg,
+		KeyID:     kid,
+	}, nil
+}
+
+// getEllipticCurve palauttaa elliptic.Curve–tyypin annettuun käyrän nimeen perustuen.
+func getEllipticCurve(curveName string) (elliptic.Curve, error) {
+	switch curveName {
+	case "P-256":
+		return elliptic.P256(), nil
+	case "P-384":
+		return elliptic.P384(), nil
+	case "P-521":
+		return elliptic.P521(), nil
+	default:
+		return nil, fmt.Errorf("unsupported elliptic curve: %s", curveName)
+	}
 }

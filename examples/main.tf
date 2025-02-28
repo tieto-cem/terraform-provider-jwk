@@ -6,8 +6,7 @@ terraform {
   }
 }
 
-
-resource "jose_keystore" "keystore" {
+resource "jose_keystore" "rsa_keystore" {
   keys = [
     {
       type = "RSA"
@@ -21,11 +20,30 @@ resource "jose_keystore" "keystore" {
       kid = "sig-1024"
       use = "sig"
       alg = "RS256"
-    }
+    },
   ]
 }
 
-output "keystore_json" {
-  value = jose_keystore.keystore.keystore_json
-  sensitive = true
+resource "jose_keystore" "ec_keystore" {
+  keys = [
+
+    {
+      type = "EC"
+      kid = "encrypt"
+      use = "enc"
+      alg = "ECDH-ES+A128KW"
+      crv = "P-256"
+    }
+
+  ]
+}
+
+output "a_rsa_keystore" {
+  value = jose_keystore.rsa_keystore.keystore_json
+  sensitive = false
+}
+
+output "b_ec_keystore" {
+  value = jose_keystore.ec_keystore.keystore_json
+  sensitive = false
 }

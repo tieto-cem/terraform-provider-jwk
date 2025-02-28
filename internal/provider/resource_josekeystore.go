@@ -26,10 +26,11 @@ func (r *joseKeystoreResource) Schema(_ context.Context, _ resource.SchemaReques
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"type": schema.StringAttribute{Required: true},
-						"size": schema.Int64Attribute{Required: true},
+						"size": schema.Int32Attribute{Optional: true},
 						"kid":  schema.StringAttribute{Required: true},
 						"use":  schema.StringAttribute{Required: true},
 						"alg":  schema.StringAttribute{Optional: true},
+						"crv":  schema.StringAttribute{Optional: true},
 					},
 				},
 			},
@@ -51,7 +52,7 @@ func (r *joseKeystoreResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Luo JWK-keystore käyttäjän määrittelemillä avaimilla.
-	keystoreJSON, err := CreateRSAKeystore(plan.Keys)
+	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("JWK Keystoren luonti epäonnistui", err.Error())
 		return
@@ -78,7 +79,7 @@ func (r *joseKeystoreResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	keystoreJSON, err := CreateRSAKeystore(plan.Keys)
+	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("JWK Keystoren päivitys epäonnistui", err.Error())
 		return
