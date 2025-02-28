@@ -12,7 +12,7 @@ resource "jose_keystore" "keystore" {
     {
       type = "RSA"
       size = 1024
-      kid = "enc-1024"
+      kid = "enc-1024-1"
       use = "enc"
     },
     {
