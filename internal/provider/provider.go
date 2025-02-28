@@ -11,6 +11,15 @@ import (
 
 type joseProvider struct{}
 
+func (p *joseProvider) Documentation() string {
+	return `This provider manages JSON Web Keys (JWKs) for use with RSA encryption and signing.
+It supports both creating and retrieving keys for signing ('sig') and encryption ('enc') purposes.
+Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
+and 'use' (key usage).
+
+Provider uses gopkg.in/square/go-jose.v2 library for handling JWKs.`
+}
+
 func (p *joseProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "jose"
 }
@@ -25,6 +34,7 @@ func (p *joseProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 func (p *joseProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewJoseKeystoreResource,
+		NewJoseRSAKeyResource,
 	}
 }
 

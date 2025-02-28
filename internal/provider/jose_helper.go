@@ -90,8 +90,18 @@ func CreateJWKKeystore(config []KeyConfig) (string, error) {
 	return string(keystoreJSON), nil
 }
 
-// generateRSAJWK luo RSA-avaimen.
+var validRSASizes = map[int]bool{
+	512: true, 1024: true, 2048: true, 3072: true, 4096: true,
+}
+
+// Create RSA JWK using given bits, kid, use and alg.
+// Check that the given parameters are valid.
 func generateRSAJWK(bits int, kid, use, alg string) (*jose.JSONWebKey, error) {
+
+	if !validRSASizes[bits] {
+		return nil, fmt.Errorf("invalid RSA key size '%d'. Expected one of: 2048, 3072, 4096", bits)
+	}
+
 	privKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		return nil, err
