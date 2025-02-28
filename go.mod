@@ -4,6 +4,8 @@ go 1.23.3
 
 require github.com/hashicorp/terraform-plugin-framework v1.14.1
 
+require golang.org/x/crypto v0.32.0 // indirect
+
 require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -27,4 +29,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/grpc v1.69.4 // indirect
 	google.golang.org/protobuf v1.36.3 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0
 )

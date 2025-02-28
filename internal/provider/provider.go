@@ -24,7 +24,7 @@ func (p *joseProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 
 func (p *joseProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewResource,
+		NewJoseKeystoreResource,
 	}
 }
 
