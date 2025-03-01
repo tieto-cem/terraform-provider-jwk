@@ -19,8 +19,8 @@ brew install go
 # Build this locally into this folder, and test that it works
 # It is expected to see following message
 
-go build -o terraform-provider-jose
-./terraform-provider-jose
+go build -o terraform-provider-jwk
+./terraform-provider-jwk
 This binary is a plugin. These are not meant to be executed directly.
 Please execute the program that consumes these plugins, which will
 load any plugins automatically

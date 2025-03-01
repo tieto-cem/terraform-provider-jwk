@@ -1,7 +1,7 @@
 terraform {
   required_providers {
-    jose = {
-      source = "tieto-cem/jose"
+    jwk = {
+      source = "tieto-cem/jwk"
     }
   }
 }

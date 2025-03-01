@@ -8,17 +8,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type joseKeystoreResource struct{}
+type jwkKeystoreResource struct{}
 
-func NewJoseKeystoreResource() resource.Resource {
-	return &joseKeystoreResource{}
+func NewJwkKeystoreResource() resource.Resource {
+	return &jwkKeystoreResource{}
 }
 
-func (r *joseKeystoreResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "jose_keystore"
+func (r *jwkKeystoreResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "jwk_keystore"
 }
 
-func (r *joseKeystoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *jwkKeystoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"keys": schema.ListNestedAttribute{
@@ -34,14 +34,14 @@ func (r *joseKeystoreResource) Schema(_ context.Context, _ resource.SchemaReques
 					},
 				},
 			},
-			"keystore_json": schema.StringAttribute{
+			"json": schema.StringAttribute{
 				Computed: true,
 			},
 		},
 	}
 }
 
-func (r *joseKeystoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *jwkKeystoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan KeystoreConfig
 
 	// Haetaan käyttäjän määrittelemät arvot planista
@@ -66,11 +66,11 @@ func (r *joseKeystoreResource) Create(ctx context.Context, req resource.CreateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseKeystoreResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *jwkKeystoreResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Jos keystore on staattinen, ei tehdä mitään
 }
 
-func (r *joseKeystoreResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *jwkKeystoreResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan KeystoreConfig
 
 	diags := req.Plan.Get(ctx, &plan)
@@ -90,6 +90,6 @@ func (r *joseKeystoreResource) Update(ctx context.Context, req resource.UpdateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseKeystoreResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *jwkKeystoreResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Poisto ei vaadi erityistoimenpiteitä.
 }

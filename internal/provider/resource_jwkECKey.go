@@ -11,16 +11,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Creates a new instance of the joseECKeyResource.
-func NewJoseECKeyResource() resource.Resource {
-	return &joseECKeyResource{}
+// Creates a new instance of the jwkECKeyResource.
+func NewJwkECKeyResource() resource.Resource {
+	return &jwkECKeyResource{}
 }
 
-// joseECKeyResource is a custom resource that generates a JSON Web Key (JWK) in EC format.
-type joseECKeyResource struct{}
+// jwkECKeyResource is a custom resource that generates a JSON Web Key (JWK) in EC format.
+type jwkECKeyResource struct{}
 
 // This struct gets populated with the configuration values
-type joseECKeyConfig struct {
+type jwkECKeyConfig struct {
 	KID     types.String `tfsdk:"kid"`
 	Use     types.String `tfsdk:"use"`
 	Crv     types.String `tfsdk:"crv"`
@@ -29,7 +29,7 @@ type joseECKeyConfig struct {
 }
 
 // Resource Documentation
-func (r *joseECKeyResource) Documentation() string {
+func (r *jwkECKeyResource) Documentation() string {
 	return `This resource creates and manages EC keys for JSON Web Key (JWK) purposes.
 It can be used to either sign ('sig') or encrypt ('enc') data using EC algorithms.
 The 'kid' field specifies the unique identifier for the key, while the 'use' field determines 
@@ -38,12 +38,12 @@ encryption algorithm to be used, and the 'crv' field specifies the elliptic curv
 }
 
 // Resource Metadata
-func (r *joseECKeyResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "jose_ec_key"
+func (r *jwkECKeyResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "jwk_ec_key"
 }
 
 // Resource Schema
-func (r *joseECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *jwkECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"kid": schema.StringAttribute{
@@ -72,8 +72,8 @@ func (r *joseECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 }
 
 // Create is identical to Update, so we could reuse some code here
-func (r *joseECKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan joseECKeyConfig
+func (r *jwkECKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan jwkECKeyConfig
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -103,12 +103,12 @@ func (r *joseECKeyResource) Create(ctx context.Context, req resource.CreateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseECKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *jwkECKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 }
 
 // Update is identical to Create, so we could reuse some code here
-func (r *joseECKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan joseECKeyConfig
+func (r *jwkECKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan jwkECKeyConfig
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -134,15 +134,15 @@ func (r *joseECKeyResource) Update(ctx context.Context, req resource.UpdateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseECKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *jwkECKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 }
 
 // -----------------------------------------------------------------------------
 // ---    Validate Configuration    --------------------------------------------
 // -----------------------------------------------------------------------------
 
-func (r joseECKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data joseECKeyConfig
+func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data jwkECKeyConfig
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 

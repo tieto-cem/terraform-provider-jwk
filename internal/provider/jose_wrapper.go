@@ -135,6 +135,23 @@ func generateECJWK(kid, use, alg, crv string) (*jose.JSONWebKey, error) {
 	}, nil
 }
 
+func generateSymmetricJWK(kid, use string, bytes int) (*jose.JSONWebKey, error) {
+	// Create a random key
+	key := make([]byte, bytes)
+	_, err := rand.Read(key)
+
+	if err != nil {
+		return nil, fmt.Errorf("error generating random key: %v", err)
+	}
+
+	// Palautetaan JSONWebKey
+	return &jose.JSONWebKey{
+		Key:   key,
+		Use:   use,
+		KeyID: kid,
+	}, nil
+}
+
 // getEllipticCurve palauttaa elliptic.Curve–tyypin annettuun käyrän nimeen perustuen.
 func getEllipticCurve(curveName string) (elliptic.Curve, error) {
 	switch curveName {

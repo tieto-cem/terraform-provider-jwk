@@ -1,4 +1,4 @@
-module terraform-provider-jose
+module terraform-provider-jwk
 
 go 1.23.3
 

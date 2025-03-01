@@ -37,14 +37,14 @@ var validECCurves = []string{ // Elliptic curves
 
 // --------------------------------------------------------------------------
 
-// NewProvider creates a new instance of the joseProvider
+// NewProvider creates a new instance of the jwkProvider
 func NewProvider() provider.Provider {
-	return &joseProvider{}
+	return &jwkProvider{}
 }
 
-type joseProvider struct{}
+type jwkProvider struct{}
 
-func (p *joseProvider) Documentation() string {
+func (p *jwkProvider) Documentation() string {
 	return `This provider manages JSON Web Keys (JWKs) for use with RSA and EC encryption and signing.
 It supports both creating and retrieving keys for signing ('sig') and encryption ('enc') purposes.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
@@ -54,29 +54,29 @@ Provider uses gopkg.in/square/go-jose.v2 library for handling JWKs.`
 }
 
 // Metadata
-func (p *joseProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "jose"
+func (p *jwkProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "jwk"
 }
 
 // Schema
-func (p *joseProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *jwkProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{}
 }
 
 // Configure
-func (p *joseProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+func (p *jwkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 }
 
 // Resources
-func (p *joseProvider) Resources(_ context.Context) []func() resource.Resource {
+func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewJoseKeystoreResource,
-		NewJoseRSAKeyResource,
-		NewJoseECKeyResource,
+		NewJwkKeystoreResource,
+		NewJwkRSAKeyResource,
+		NewJwkECKeyResource,
 	}
 }
 
 // DataSources
-func (p *joseProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+func (p *jwkProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{}
 }

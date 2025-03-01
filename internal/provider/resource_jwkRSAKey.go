@@ -12,16 +12,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Creates a new instance of the joseRSAKeyResource.
-func NewJoseRSAKeyResource() resource.Resource {
-	return &joseRSAKeyResource{}
+// Creates a new instance of the jwkRSAKeyResource.
+func NewJwkRSAKeyResource() resource.Resource {
+	return &jwkRSAKeyResource{}
 }
 
-// joseRSAKeyResource is a custom resource that generates a JSON Web Key (JWK) in RSA format.
-type joseRSAKeyResource struct{}
+// jwkRSAKeyResource is a custom resource that generates a JSON Web Key (JWK) in RSA format.
+type jwkRSAKeyResource struct{}
 
 // This struct gets populated with the configuration values
-type joseRSAKeyConfig struct {
+type jwkRSAKeyConfig struct {
 	KID        types.String `tfsdk:"kid"`
 	Use        types.String `tfsdk:"use"`
 	Size       types.Int64  `tfsdk:"size"`
@@ -30,7 +30,7 @@ type joseRSAKeyConfig struct {
 }
 
 // Resource Documentation
-func (r *joseRSAKeyResource) Documentation() string {
+func (r *jwkRSAKeyResource) Documentation() string {
 	return `This resource creates and manages RSA keys for JSON Web Key (JWK) purposes.
 It can be used to either sign ('sig') or encrypt ('enc') data using RSA algorithms.
 The 'kid' field specifies the unique identifier for the key, while the 'use' field determines 
@@ -39,12 +39,12 @@ encryption algorithm to be used, and the 'size' field specifies the key size in 
 }
 
 // Resource Metadata
-func (r *joseRSAKeyResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "jose_rsa_key"
+func (r *jwkRSAKeyResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "jwk_rsa_key"
 }
 
 // Resource Schema
-func (r *joseRSAKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *jwkRSAKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"kid": schema.StringAttribute{
@@ -73,8 +73,8 @@ func (r *joseRSAKeyResource) Schema(_ context.Context, _ resource.SchemaRequest,
 }
 
 // Create is identical to Update, so we could reuse some code here
-func (r *joseRSAKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan joseRSAKeyConfig
+func (r *jwkRSAKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan jwkRSAKeyConfig
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -105,12 +105,12 @@ func (r *joseRSAKeyResource) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseRSAKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *jwkRSAKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 }
 
 // Update is identical to Create, so we could reuse some code here
-func (r *joseRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan joseRSAKeyConfig
+func (r *jwkRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan jwkRSAKeyConfig
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -137,15 +137,15 @@ func (r *joseRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequ
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *joseRSAKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *jwkRSAKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 }
 
 // -----------------------------------------------------------------------------
 // ---    Validate Configuration    --------------------------------------------
 // -----------------------------------------------------------------------------
 
-func (r joseRSAKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data joseRSAKeyConfig
+func (r jwkRSAKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data jwkRSAKeyConfig
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
