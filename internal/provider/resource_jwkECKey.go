@@ -20,7 +20,7 @@ func NewJwkECKeyResource() resource.Resource {
 type jwkECKeyResource struct{}
 
 // This struct gets populated with the configuration values
-type jwkECKeyConfig struct {
+type jwkECKeyModel struct {
 	KID     types.String `tfsdk:"kid"`
 	Use     types.String `tfsdk:"use"`
 	Crv     types.String `tfsdk:"crv"`
@@ -73,19 +73,19 @@ func (r *jwkECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 // Create is identical to Update, so we could reuse some code here
 func (r *jwkECKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan jwkECKeyConfig
+	var model jwkECKeyModel
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	key, err := generateECJWK(plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString(), plan.Crv.ValueString())
+	key, err := generateECJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), model.Crv.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("EC Key Generation Failed", err.Error())
 		return
@@ -97,9 +97,9 @@ func (r *jwkECKeyResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	plan.KeyJSON = types.StringValue(string(keyJSON))
+	model.KeyJSON = types.StringValue(string(keyJSON))
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -108,15 +108,15 @@ func (r *jwkECKeyResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 // Update is identical to Create, so we could reuse some code here
 func (r *jwkECKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan jwkECKeyConfig
+	var model jwkECKeyModel
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	key, err := generateECJWK(plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString(), plan.Crv.ValueString())
+	key, err := generateECJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), model.Crv.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("EC Key Generation Failed", err.Error())
 		return
@@ -128,9 +128,9 @@ func (r *jwkECKeyResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	plan.KeyJSON = types.StringValue(string(keyJSON))
+	model.KeyJSON = types.StringValue(string(keyJSON))
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -142,51 +142,51 @@ func (r *jwkECKeyResource) Delete(ctx context.Context, req resource.DeleteReques
 // -----------------------------------------------------------------------------
 
 func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data jwkECKeyConfig
+	var model jwkECKeyModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Validate 'use' attribute using helper method
-	if !isValid(data.Use.ValueString(), validUses) {
+	if !isValid(model.Use.ValueString(), validUses) {
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'use'",
-			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", data.Use.ValueString()),
+			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", model.Use.ValueString()),
 		)
 		return
 	}
 
 	// Validate 'crv' attribute using helper method
-	if !isValid(data.Crv.ValueString(), validECCurves) {
+	if !isValid(model.Crv.ValueString(), validECCurves) {
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'crv'",
-			fmt.Sprintf("Expected one of '%s', got '%s'", validECCurves, data.Crv.ValueString()),
+			fmt.Sprintf("Expected one of '%s', got '%s'", validECCurves, model.Crv.ValueString()),
 		)
 		return
 	}
 
 	// Validate 'alg' attribute for "sig" use case
-	if data.Use.ValueString() == "sig" {
-		if !isValid(data.Alg.ValueString(), validECSigAlgorithms) {
+	if model.Use.ValueString() == "sig" {
+		if !isValid(model.Alg.ValueString(), validECSigAlgorithms) {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'sig'",
 				fmt.Sprintf("Expected a valid EC signature algorithm, one of '%s', got '%s'",
-					strings.Join(validECSigAlgorithms, ", "), data.Alg.ValueString()),
+					strings.Join(validECSigAlgorithms, ", "), model.Alg.ValueString()),
 			)
 			return
 		}
 	}
 
 	// Validate 'alg' attribute for "enc" use case
-	if data.Alg.ValueString() != "" && data.Use.ValueString() == "enc" {
-		if !isValid(data.Alg.ValueString(), validECEncAlgorithms) {
+	if model.Alg.ValueString() != "" && model.Use.ValueString() == "enc" {
+		if !isValid(model.Alg.ValueString(), validECEncAlgorithms) {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'enc'",
 				fmt.Sprintf("Expected a valid EC encryption algorithm, one of '%s', got '%s'",
-					strings.Join(validECEncAlgorithms, ", "), data.Alg.ValueString()),
+					strings.Join(validECEncAlgorithms, ", "), model.Alg.ValueString()),
 			)
 			return
 		}

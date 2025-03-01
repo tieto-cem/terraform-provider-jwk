@@ -41,23 +41,23 @@ func (r *jwkKeystoreResource) Schema(_ context.Context, _ resource.SchemaRequest
 
 // Create
 func (r *jwkKeystoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan KeystoreModel
+	var model KeystoreModel
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
+	keystoreJSON, err := CreateJWKKeystore(model.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create JWK Keystore", err.Error())
 		return
 	}
 
-	plan.KeystoreJSON = types.StringValue(keystoreJSON)
+	model.KeystoreJSON = types.StringValue(keystoreJSON)
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -67,22 +67,22 @@ func (r *jwkKeystoreResource) Read(ctx context.Context, req resource.ReadRequest
 
 // Update
 func (r *jwkKeystoreResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan KeystoreModel
+	var model KeystoreModel
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
+	keystoreJSON, err := CreateJWKKeystore(model.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to Create JWK Keystore", err.Error())
 		return
 	}
 
-	plan.KeystoreJSON = types.StringValue(keystoreJSON)
-	diags = resp.State.Set(ctx, plan)
+	model.KeystoreJSON = types.StringValue(keystoreJSON)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 

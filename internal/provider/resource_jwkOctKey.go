@@ -20,7 +20,7 @@ func NewJwkOctKeyResource() resource.Resource {
 type jwkOctKeyResource struct{}
 
 // This struct gets populated with the configuration values
-type jwkOctKeyConfig struct {
+type jwkOctKeyModel struct {
 	KID        types.String `tfsdk:"kid"`
 	Use        types.String `tfsdk:"use"`
 	Size       types.Int64  `tfsdk:"num_bytes"`
@@ -64,19 +64,19 @@ func (r *jwkOctKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 
 // Create is identical to Update, so we could reuse some code here
 func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan jwkOctKeyConfig
+	var model jwkOctKeyModel
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	key, err := generateSymmetricJWK(plan.KID.ValueString(), plan.Use.ValueString(), int(plan.Size.ValueInt64()))
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), int(model.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -88,9 +88,9 @@ func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	plan.OctKeyJSON = types.StringValue(string(keyJSON))
+	model.OctKeyJSON = types.StringValue(string(keyJSON))
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -99,15 +99,15 @@ func (r *jwkOctKeyResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 // Update is identical to Create, so we could reuse some code here
 func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan jwkOctKeyConfig
+	var model jwkOctKeyModel
 
-	diags := req.Plan.Get(ctx, &plan)
+	diags := req.Plan.Get(ctx, &model)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	key, err := generateSymmetricJWK(plan.KID.ValueString(), plan.Use.ValueString(), int(plan.Size.ValueInt64()))
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), int(model.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -120,9 +120,9 @@ func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	plan.OctKeyJSON = types.StringValue(string(keyJSON))
+	model.OctKeyJSON = types.StringValue(string(keyJSON))
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, model)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -134,7 +134,7 @@ func (r *jwkOctKeyResource) Delete(ctx context.Context, req resource.DeleteReque
 // -----------------------------------------------------------------------------
 
 func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data jwkOctKeyConfig
+	var data jwkOctKeyModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
