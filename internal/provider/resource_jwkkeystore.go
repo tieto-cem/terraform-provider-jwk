@@ -8,70 +8,66 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type KeystoreModel struct {
+	Keys         []string     `tfsdk:"keys"`
+	KeystoreJSON types.String `tfsdk:"json"`
+}
+
 type jwkKeystoreResource struct{}
 
 func NewJwkKeystoreResource() resource.Resource {
 	return &jwkKeystoreResource{}
 }
 
+// Metadata
 func (r *jwkKeystoreResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "jwk_keystore"
 }
 
+// Schema
 func (r *jwkKeystoreResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"keys": schema.ListNestedAttribute{
-				Required: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"type": schema.StringAttribute{Required: true},
-						"size": schema.Int32Attribute{Optional: true},
-						"kid":  schema.StringAttribute{Required: true},
-						"use":  schema.StringAttribute{Required: true},
-						"alg":  schema.StringAttribute{Optional: true},
-						"crv":  schema.StringAttribute{Optional: true},
-					},
-				},
+			"keys": schema.ListAttribute{ // A list of JSON-strings
+				Required:    true,
+				ElementType: types.StringType,
 			},
-			"json": schema.StringAttribute{
+			"json": schema.StringAttribute{ // The resulting keystore JSON
 				Computed: true,
 			},
 		},
 	}
 }
 
+// Create
 func (r *jwkKeystoreResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan KeystoreConfig
+	var plan KeystoreModel
 
-	// Haetaan käyttäjän määrittelemät arvot planista
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Luo JWK-keystore käyttäjän määrittelemillä avaimilla.
 	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
 	if err != nil {
-		resp.Diagnostics.AddError("JWK Keystoren luonti epäonnistui", err.Error())
+		resp.Diagnostics.AddError("Failed to create JWK Keystore", err.Error())
 		return
 	}
 
-	// Asetetaan generoidun keystoren JSON arvo stateen
 	plan.KeystoreJSON = types.StringValue(keystoreJSON)
 
-	// Tallennetaan päivitetty state
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
 
+// Read
 func (r *jwkKeystoreResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Jos keystore on staattinen, ei tehdä mitään
 }
 
+// Update
 func (r *jwkKeystoreResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan KeystoreConfig
+	var plan KeystoreModel
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -81,7 +77,7 @@ func (r *jwkKeystoreResource) Update(ctx context.Context, req resource.UpdateReq
 
 	keystoreJSON, err := CreateJWKKeystore(plan.Keys)
 	if err != nil {
-		resp.Diagnostics.AddError("JWK Keystoren päivitys epäonnistui", err.Error())
+		resp.Diagnostics.AddError("Failed to Create JWK Keystore", err.Error())
 		return
 	}
 
@@ -90,6 +86,6 @@ func (r *jwkKeystoreResource) Update(ctx context.Context, req resource.UpdateReq
 	resp.Diagnostics.Append(diags...)
 }
 
+// Delete
 func (r *jwkKeystoreResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Poisto ei vaadi erityistoimenpiteitä.
 }

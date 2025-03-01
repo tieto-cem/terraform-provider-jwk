@@ -13,6 +13,8 @@ resource "jwk_ec_key" "key2" {
     crv = "P-256"
 }
 
+
+
 output "ec_key1" {
   value = nonsensitive("${jwk_ec_key.key1.json}\n")
   sensitive = false

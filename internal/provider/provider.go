@@ -45,12 +45,19 @@ func NewProvider() provider.Provider {
 type jwkProvider struct{}
 
 func (p *jwkProvider) Documentation() string {
-	return `This provider manages JSON Web Keys (JWKs) for use with RSA and EC encryption and signing.
-It supports both creating and retrieving keys for signing ('sig') and encryption ('enc') purposes.
+	return `This provider manages JSON Web Keys (JWKs) for use with symmetric, RSA and EC encryption and signing.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
-and 'use' (key usage).
+and 'use' (key usage). There is a also a special resource for managing JWK key stores, which can contain multiple keys.
 
-Provider uses gopkg.in/square/go-jose.v2 library for handling JWKs.`
+Included resources try to make sure that Terraform configurations are valid, in terms of algorithms and such.
+
+Following go modules are used for handling key generation and JWKs:
+- "crypto/ecdsa"
+- "crypto/elliptic"
+- "crypto/rand"
+- "crypto/rsa"
+- "encoding/json"
+- "gopkg.in/square/go-jose.v2"`
 }
 
 // Metadata

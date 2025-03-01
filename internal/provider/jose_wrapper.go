@@ -8,86 +8,37 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"gopkg.in/square/go-jose.v2"
 )
 
-// KeyConfig edustaa yksittäistä avainta keystore-muodossa.
-// KeyConfig edustaa yksittäistä avainta keystore-muodossa.// KeyConfig edustaa yksittäistä avainta keystore-muodossa.
-type KeyConfig struct {
-	Type string       `tfsdk:"type"` // Esim. "RSA" tai "EC"
-	Size types.Int32  `tfsdk:"size"` // Käytetään RSA-avaimille
-	KID  string       `tfsdk:"kid"`
-	Use  string       `tfsdk:"use"`
-	Alg  types.String `tfsdk:"alg"` // Algoritmi; voi olla null
-	Crv  types.String `tfsdk:"crv"` // Käyrä, esim. "P-256" (vaaditaan EC-avaimille)
+type JWKSet struct {
+	Keys []json.RawMessage `json:"keys"`
 }
 
-// KeystoreConfig määrittää käyttäjän syöttämät parametrit, mukaan lukien avainlista
-// ja generoidun keystore_json-arvon.
-type KeystoreConfig struct {
-	Keys         []KeyConfig  `tfsdk:"keys"`
-	KeystoreJSON types.String `tfsdk:"keystore_json"`
-}
+// Create JWK keystore from given keys.
+// The keys are expected to be in JSON format.
+// The function returns the keystore as a JSON string.
+func CreateJWKKeystore(keys []string) (string, error) {
+	// Create
+	keystore := JWKSet{
+		Keys: make([]json.RawMessage, 0, len(keys)),
+	}
 
-// CreateJWKKeystore luo keystore JSON-muodossa annetun avainlistan perusteella.
-func CreateJWKKeystore(config []KeyConfig) (string, error) {
-	keystore := jose.JSONWebKeySet{}
-
-	// Käy läpi kaikki avaimet
-	for _, key := range config {
-		switch key.Type {
-		case "RSA":
-			if !key.Crv.IsNull() {
-				return "", fmt.Errorf("RSA key must not specify a curve (crv)")
-			}
-
-			size := int(key.Size.ValueInt32()) // Convert types.Int32 to int
-			// Muunna key.Alg (tyyppi types.String) tavalliseksi stringiksi.
-			var alg string
-			if key.Alg.IsNull() {
-				alg = ""
-			} else {
-				alg = key.Alg.ValueString()
-			}
-			jwk, err := generateRSAJWK(key.KID, key.Use, alg, size)
-			if err != nil {
-				return "", err
-			}
-			keystore.Keys = append(keystore.Keys, *jwk)
-		case "EC":
-			if !key.Size.IsNull() {
-				return "", fmt.Errorf("EC key must not specify a size")
-			}
-
-			// EC-avaimille vaaditaan käyrä.
-			if key.Crv.IsNull() {
-				return "", fmt.Errorf("EC key must specify a curve (crv)")
-			}
-			crv := key.Crv.ValueString()
-			var alg string
-			if key.Alg.IsNull() {
-				alg = ""
-			} else {
-				alg = key.Alg.ValueString()
-			}
-			jwk, err := generateECJWK(key.KID, key.Use, alg, crv)
-			if err != nil {
-				return "", err
-			}
-			keystore.Keys = append(keystore.Keys, *jwk)
-		default:
-			return "", fmt.Errorf("unsupported key type: %s. Type must be one of [RSA, EC]", key.Type)
+	for _, keyJSON := range keys {
+		// Parse key JSON, if the JSON is invalid, return an error
+		var raw json.RawMessage
+		if err := json.Unmarshal([]byte(keyJSON), &raw); err != nil {
+			return "", fmt.Errorf("invalid key JSON: %v", err)
 		}
+		keystore.Keys = append(keystore.Keys, raw)
 	}
 
-	// Muunnetaan keystore JSON-muotoon
-	keystoreJSON, err := json.MarshalIndent(keystore, "", "  ")
+	result, err := json.Marshal(keystore)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshal keystore: %v", err)
 	}
 
-	return string(keystoreJSON), nil
+	return string(result), nil
 }
 
 var validRSASizes = map[int]bool{
