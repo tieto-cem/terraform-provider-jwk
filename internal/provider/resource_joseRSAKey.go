@@ -12,15 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var validUses = []string{"sig", "enc"} // Allowed values for the "use" attribute
-var validSigAlgorithms = []string{
-	"RS256", "RS384", "RS512", // RSA-signature algorithms
-}
-
-var validEncAlgorithms = []string{
-	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256", // RSA encryption algorithms
-}
-
 // Creates a new instance of the joseRSAKeyResource.
 func NewJoseRSAKeyResource() resource.Resource {
 	return &joseRSAKeyResource{}
@@ -95,12 +86,7 @@ func (r *joseRSAKeyResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	keySize := int64(2048)
-	if !plan.Size.IsNull() {
-		keySize = plan.Size.ValueInt64()
-	}
-
-	key, err := generateRSAJWK(int(keySize), plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString())
+	key, err := generateRSAJWK(plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString(), int(plan.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("RSA Key Generation Failed", err.Error())
 		return
@@ -114,7 +100,6 @@ func (r *joseRSAKeyResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	plan.RSAKeyJSON = types.StringValue(string(keyJSON))
-	plan.Size = types.Int64Value(keySize)
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -133,12 +118,7 @@ func (r *joseRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	keySize := int64(2048)
-	if !plan.Size.IsNull() {
-		keySize = plan.Size.ValueInt64()
-	}
-
-	key, err := generateRSAJWK(int(keySize), plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString())
+	key, err := generateRSAJWK(plan.KID.ValueString(), plan.Use.ValueString(), plan.Alg.ValueString(), int(plan.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("RSA Key Generation Failed", err.Error())
 		return
@@ -152,7 +132,6 @@ func (r *joseRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	plan.RSAKeyJSON = types.StringValue(string(keyJSON))
-	plan.Size = types.Int64Value(keySize)
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -177,8 +156,7 @@ func (r joseRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Val
 	log.Printf("Validating use attribute: %s", data.Use.ValueString())
 
 	// Validate 'use' attribute using helper method
-	if !isValidUse(data.Use.ValueString()) {
-		log.Println("*** Invalid value detected for 'use':", data.Use.ValueString())
+	if !isValid(data.Use.ValueString(), validUses) {
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'use'",
 			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", data.Use.ValueString()),
@@ -188,12 +166,11 @@ func (r joseRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Val
 
 	// Validate 'alg' attribute for "sig" use case
 	if data.Use.ValueString() == "sig" {
-		if !isValidSigAlgorithm(data.Alg.ValueString()) {
-			log.Println("*** Invalid value detected for 'alg' with 'sig' use:", data.Alg.ValueString())
+		if !isValid(data.Alg.ValueString(), validRSASigAlgorithms) {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'sig'",
 				fmt.Sprintf("Expected a valid RSA signature algorithm, one of '%s', got '%s'",
-					strings.Join(validSigAlgorithms, ", "), data.Alg.ValueString()),
+					strings.Join(validRSASigAlgorithms, ", "), data.Alg.ValueString()),
 			)
 			return
 		}
@@ -201,12 +178,11 @@ func (r joseRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Val
 
 	// Validate 'alg' attribute for "enc" use case
 	if data.Alg.ValueString() != "" && data.Use.ValueString() == "enc" {
-		if !isValidEncAlgorithm(data.Alg.ValueString()) {
-			log.Println("*** Invalid value detected for 'alg' with 'enc' use:", data.Alg.ValueString())
+		if !isValid(data.Alg.ValueString(), validRSAEncAlgorithms) {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'enc'",
 				fmt.Sprintf("Expected a valid RSA encryption algorithm, one of '%s', got '%s'",
-					strings.Join(validEncAlgorithms, ", "), data.Alg.ValueString()),
+					strings.Join(validRSAEncAlgorithms, ", "), data.Alg.ValueString()),
 			)
 			return
 		}
@@ -217,38 +193,8 @@ func (r joseRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Val
 		resp.Diagnostics.AddWarning(
 			"No 'alg' attribute for 'enc' use",
 			fmt.Sprintf("Consider setting a valid RSA encryption algorithm, one of '%s'",
-				strings.Join(validEncAlgorithms, ", ")),
+				strings.Join(validRSAEncAlgorithms, ", ")),
 		)
 		return
 	}
-}
-
-// Helper function to check if the 'use' attribute is valid
-func isValidUse(use string) bool {
-	for _, validUse := range validUses {
-		if use == validUse {
-			return true
-		}
-	}
-	return false
-}
-
-// Helper function to check if the algorithm is a valid RSA signature algorithm
-func isValidSigAlgorithm(alg string) bool {
-	for _, validAlg := range validSigAlgorithms {
-		if alg == validAlg {
-			return true
-		}
-	}
-	return false
-}
-
-// Helper function to check if the algorithm is a valid RSA encryption algorithm
-func isValidEncAlgorithm(alg string) bool {
-	for _, validAlg := range validEncAlgorithms {
-		if alg == validAlg {
-			return true
-		}
-	}
-	return false
 }

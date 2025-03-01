@@ -50,7 +50,7 @@ func CreateJWKKeystore(config []KeyConfig) (string, error) {
 			} else {
 				alg = key.Alg.ValueString()
 			}
-			jwk, err := generateRSAJWK(size, key.KID, key.Use, alg)
+			jwk, err := generateRSAJWK(key.KID, key.Use, alg, size)
 			if err != nil {
 				return "", err
 			}
@@ -96,7 +96,7 @@ var validRSASizes = map[int]bool{
 
 // Create RSA JWK using given bits, kid, use and alg.
 // Check that the given parameters are valid.
-func generateRSAJWK(bits int, kid, use, alg string) (*jose.JSONWebKey, error) {
+func generateRSAJWK(kid, use, alg string, bits int) (*jose.JSONWebKey, error) {
 
 	if !validRSASizes[bits] {
 		return nil, fmt.Errorf("invalid RSA key size '%d'. Expected one of: 2048, 3072, 4096", bits)
