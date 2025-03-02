@@ -45,19 +45,38 @@ func NewProvider() provider.Provider {
 type jwkProvider struct{}
 
 func (p *jwkProvider) Documentation() string {
-	return `This provider manages JSON Web Keys (JWKs) for use with symmetric, RSA and EC encryption and signing.
+	return `This provider manages JSON Web Keys (JWKs) for use with symmetric, RSA, and EC encryption and signing.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
-and 'use' (key usage). There is a also a special resource for managing JWK key stores, which can contain multiple keys.
+and 'use' (key usage). 
 
-Included resources try to make sure that Terraform configurations are valid, in terms of algorithms and such.
+Additionally, this provider includes a special resource, 'jwk_keyset', which represents a collection of multiple 
+JWKs in a single JSON Web Key Set (JWKS) structure, following the JSON Web Key (JWK) specification.
 
-Following go modules are used for handling key generation and JWKs:
+This provider ensures that Terraform configurations adhere to cryptographic best practices, including algorithm validation 
+and key format correctness.
+
+## Supported Resources:
+- **jwk_rsa_key**: Manages RSA keys.
+- **jwk_ec_key**: Manages Elliptic Curve keys.
+- **jwk_symmetric_key**: Manages symmetric keys.
+- **jwk_keyset**: Represents a set of JWK keys, conforming to the JWKS format.
+
+## Relevant Specifications:
+- [RFC 7517 - JSON Web Key (JWK)](https://datatracker.ietf.org/doc/html/rfc7517)
+- [RFC 7518 - JSON Web Algorithms (JWA)](https://datatracker.ietf.org/doc/html/rfc7518)
+- [RFC 7519 - JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519) (for broader JWK usage)
+
+## Cryptographic Libraries Used:
+This provider utilizes Go's standard cryptographic libraries for key generation and manipulation:
 - "crypto/ecdsa"
 - "crypto/elliptic"
 - "crypto/rand"
 - "crypto/rsa"
 - "encoding/json"
-- "gopkg.in/square/go-jose.v2"`
+- "gopkg.in/square/go-jose.v2"
+
+By using this provider, you can securely manage cryptographic keys within Terraform, ensuring compliance with 
+modern security standards.`
 }
 
 // Metadata
@@ -77,9 +96,10 @@ func (p *jwkProvider) Configure(ctx context.Context, req provider.ConfigureReque
 // Resources
 func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewJwkKeystoreResource,
+		NewJwkKeysetResource,
 		NewJwkRSAKeyResource,
 		NewJwkECKeyResource,
+		NewJwkOKPKeyResource,
 	}
 }
 
