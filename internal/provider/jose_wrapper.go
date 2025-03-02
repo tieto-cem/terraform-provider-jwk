@@ -29,14 +29,14 @@ func CreateJWKKeyset(keys []string) (string, error) {
 		// Parse key JSON, if the JSON is invalid, return an error
 		var raw json.RawMessage
 		if err := json.Unmarshal([]byte(keyJSON), &raw); err != nil {
-			return "", fmt.Errorf("Invalid key JSON: %v", err)
+			return "", fmt.Errorf("invalid key json: %v", err)
 		}
 		Keyset.Keys = append(Keyset.Keys, raw)
 	}
 
 	result, err := json.Marshal(Keyset)
 	if err != nil {
-		return "", fmt.Errorf("Failed to marshal Keyset: %v", err)
+		return "", fmt.Errorf("failed to marshal keyset: %v", err)
 	}
 
 	return string(result), nil
@@ -52,7 +52,7 @@ var validRSASizes = map[int]bool{
 func generateRSAJWK(kid, use, alg string, bits int) (*jose.JSONWebKey, error) {
 
 	if !validRSASizes[bits] {
-		return nil, fmt.Errorf("Invalid RSA key size '%d'. Expected one of: 2048, 3072, 4096", bits)
+		return nil, fmt.Errorf("invalid RSA key size '%d'. expected one of: 2048, 3072, 4096", bits)
 	}
 
 	privKey, err := rsa.GenerateKey(rand.Reader, bits)
@@ -116,13 +116,23 @@ func generateOKPJWK(kid, use, alg string) (*jose.JSONWebKey, *jose.JSONWebKey, e
 	return privJWK, pubJWK, nil
 }
 
-func generateSymmetricJWK(kid, use string, bytes int) (*jose.JSONWebKey, error) {
+func generateSymmetricJWK(kid, use, alg string, bytes int) (*jose.JSONWebKey, error) {
 	// Create a random key
 	key := make([]byte, bytes)
 	_, err := rand.Read(key)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error generating random key: %v", err)
+		return nil, fmt.Errorf("error generating random key: %v", err)
+	}
+
+	// If alg is given, add it to JWK
+	if alg != "" {
+		return &jose.JSONWebKey{
+			Key:       key,
+			Use:       use,
+			KeyID:     kid,
+			Algorithm: alg,
+		}, nil
 	}
 
 	return &jose.JSONWebKey{
@@ -142,6 +152,6 @@ func getEllipticCurve(curveName string) (elliptic.Curve, error) {
 	case "P-521":
 		return elliptic.P521(), nil
 	default:
-		return nil, fmt.Errorf("Unsupported elliptic curve: %s", curveName)
+		return nil, fmt.Errorf("unsupported elliptic curve: %s", curveName)
 	}
 }

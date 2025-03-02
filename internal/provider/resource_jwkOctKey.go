@@ -11,6 +11,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// Constants for valid algorithms
+var validOCTSigAlgorithms = []string{ // OCT signature algorithms
+	"HS256", "HS384", "HS512",
+	"RS256", "RS384", "RS512",
+	"ES256", "ES384", "ES512",
+	"PS256", "PS384", "PS512",
+	"none",
+}
+
+var validOCTEncAlgorithms = []string{ // OCT encryption algorithms
+	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256",
+	"A128KW", "A192KW", "A256KW",
+	"dir",
+	"ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW",
+	"A128GCMKW", "A192GCMKW", "A256GCMKW",
+	"PBES2-HS256+A128KW", "PBES2-HS384+A192KW", "PBES2-HS512+A256KW",
+}
+
 // Creates a new instance of the jwkOctKeyResource.
 func NewJwkOctKeyResource() resource.Resource {
 	return &jwkOctKeyResource{}
@@ -23,6 +41,7 @@ type jwkOctKeyResource struct{}
 type jwkOctKeyModel struct {
 	KID        types.String `tfsdk:"kid"`
 	Use        types.String `tfsdk:"use"`
+	Alg        types.String `tfsdk:"alg"`
 	Size       types.Int64  `tfsdk:"num_bytes"`
 	OctKeyJSON types.String `tfsdk:"json"`
 }
@@ -34,7 +53,7 @@ func (r *jwkOctKeyResource) Documentation() string {
 
 // Resource Metadata
 func (r *jwkOctKeyResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "jwk_symmetric_key"
+	resp.TypeName = "jwk_oct_key"
 }
 
 // Resource Schema
@@ -52,6 +71,10 @@ func (r *jwkOctKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"num_bytes": schema.Int64Attribute{
 				Required:    true,
 				Description: "The size of the key in bytes. For symmteric keys, common values are 256, 512, or 1024.",
+			},
+			"alg": schema.StringAttribute{
+				Optional:    true, // `alg` on optional kenttä
+				Description: "The cryptographic algorithm associated with the key, such as 'HS256', 'HS384', 'HS512'.",
 			},
 			"json": schema.StringAttribute{
 				Computed:    true,
@@ -76,7 +99,7 @@ func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), int(model.Size.ValueInt64()))
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), int(model.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -107,7 +130,7 @@ func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), int(model.Size.ValueInt64()))
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), int(model.Size.ValueInt64()))
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -151,5 +174,24 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", data.Use.ValueString()),
 		)
 		return
+	}
+
+	// If alg is given, check that it is adhering to specification
+	if !data.Alg.IsNull() && data.Alg.ValueString() != "" {
+		if data.Use.ValueString() == "enc" && !isValid(data.Alg.ValueString(), validOCTEncAlgorithms) {
+			resp.Diagnostics.AddError(
+				"Invalid attribute value for 'alg'",
+				fmt.Sprintf("Expected '%s', got '%s'", validOCTEncAlgorithms, data.Alg.ValueString()),
+			)
+			return
+		}
+
+		if data.Use.ValueString() == "sig" && !isValid(data.Alg.ValueString(), validOCTSigAlgorithms) {
+			resp.Diagnostics.AddError(
+				"Invalid attribute value for 'alg'",
+				fmt.Sprintf("Expected '%s', got '%s'", validOCTSigAlgorithms, data.Alg.ValueString()),
+			)
+			return
+		}
 	}
 }

@@ -45,7 +45,7 @@ func NewProvider() provider.Provider {
 type jwkProvider struct{}
 
 func (p *jwkProvider) Documentation() string {
-	return `This provider manages JSON Web Keys (JWKs) for use with symmetric, RSA, and EC encryption and signing.
+	return `This provider manages JSON Web Keys (JWKs) for use with EC, OKP, RSA and symmetric keys for encryption and signing.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
 and 'use' (key usage). 
 
@@ -58,7 +58,8 @@ and key format correctness.
 ## Supported Resources:
 - **jwk_rsa_key**: Manages RSA keys.
 - **jwk_ec_key**: Manages Elliptic Curve keys.
-- **jwk_symmetric_key**: Manages symmetric keys.
+- **jwk_oct_key**: Manages symmetric keys.
+- **jwk_okp_keypair**: A resource for creating OKP keypairs
 - **jwk_keyset**: Represents a set of JWK keys, conforming to the JWKS format.
 
 ## Relevant Specifications:
@@ -69,10 +70,13 @@ and key format correctness.
 ## Cryptographic Libraries Used:
 This provider utilizes Go's standard cryptographic libraries for key generation and manipulation:
 - "crypto/ecdsa"
+- "crypto/ed25519"
 - "crypto/elliptic"
 - "crypto/rand"
 - "crypto/rsa"
-- "encoding/json"
+
+## Additional libraries
+Following important external libraries are also used
 - "gopkg.in/square/go-jose.v2"
 
 By using this provider, you can securely manage cryptographic keys within Terraform, ensuring compliance with 
@@ -97,9 +101,10 @@ func (p *jwkProvider) Configure(ctx context.Context, req provider.ConfigureReque
 func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewJwkKeysetResource,
-		NewJwkRSAKeyResource,
 		NewJwkECKeyResource,
+		NewJwkOctKeyResource,
 		NewJwkOKPKeyResource,
+		NewJwkRSAKeyResource,
 	}
 }
 
