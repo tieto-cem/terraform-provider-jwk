@@ -11,6 +11,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// Elliptic curve (EC) constants
+var validECSigAlgorithms = []string{ // ECDSA signature algorithms
+	"ES256", "ES384", "ES512",
+}
+
+var validECEncAlgorithms = []string{ // EC encryption algorithms
+	"ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW",
+}
+
+var validECCurves = []string{ // Elliptic curves
+	"P-256", "P-384", "P-521",
+}
+
 // Creates a new instance of the jwkECKeyResource.
 func NewJwkECKeyResource() resource.Resource {
 	return &jwkECKeyResource{}

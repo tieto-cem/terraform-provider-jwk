@@ -19,7 +19,7 @@ type JWKKeyset struct {
 // Create JWK Keyset from given keys.
 // The keys are expected to be in JSON format.
 // The function returns the Keyset as a JSON string.
-func CreateJWKKeyset(keys []string) (string, error) {
+func createJWKKeyset(keys []string) (string, error) {
 
 	Keyset := JWKKeyset{
 		Keys: make([]json.RawMessage, 0, len(keys)),
@@ -42,18 +42,10 @@ func CreateJWKKeyset(keys []string) (string, error) {
 	return string(result), nil
 }
 
-var validRSASizes = map[int]bool{
-	512: true, 1024: true, 2048: true, 3072: true, 4096: true,
-}
-
 // Create RSA JWK using given bits, kid, use and alg.
 // Check that the given parameters are valid.
 // The function returns the private key as JSONWebKey.
 func generateRSAJWK(kid, use, alg string, bits int) (*jose.JSONWebKey, error) {
-
-	if !validRSASizes[bits] {
-		return nil, fmt.Errorf("invalid RSA key size '%d'. expected one of: 2048, 3072, 4096", bits)
-	}
 
 	privKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
@@ -116,9 +108,9 @@ func generateOKPJWK(kid, use, alg string) (*jose.JSONWebKey, *jose.JSONWebKey, e
 	return privJWK, pubJWK, nil
 }
 
-func generateSymmetricJWK(kid, use, alg string, bytes int) (*jose.JSONWebKey, error) {
+func generateSymmetricJWK(kid, use, alg string, num_bytes int) (*jose.JSONWebKey, error) {
 	// Create a random key
-	key := make([]byte, bytes)
+	key := make([]byte, num_bytes)
 	_, err := rand.Read(key)
 
 	if err != nil {

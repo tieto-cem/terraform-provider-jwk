@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -12,21 +11,21 @@ import (
 )
 
 // Constants for valid algorithms
-var validOCTSigAlgorithms = []string{ // OCT signature algorithms
-	"HS256", "HS384", "HS512",
-	"RS256", "RS384", "RS512",
-	"ES256", "ES384", "ES512",
-	"PS256", "PS384", "PS512",
-	"none",
+var validSigAlgorithms = map[string]int{
+	"HS256": 256, "HS384": 384, "HS512": 512,
+	"RS256": 2048, "RS384": 3072, "RS512": 4096,
+	"ES256": 256, "ES384": 384, "ES512": 512,
+	"PS256": 2048, "PS384": 3072, "PS512": 4096,
+	"none": 0,
 }
 
-var validOCTEncAlgorithms = []string{ // OCT encryption algorithms
-	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256",
-	"A128KW", "A192KW", "A256KW",
-	"dir",
-	"ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW",
-	"A128GCMKW", "A192GCMKW", "A256GCMKW",
-	"PBES2-HS256+A128KW", "PBES2-HS384+A192KW", "PBES2-HS512+A256KW",
+var validEncAlgorithms = map[string]int{
+	"RSA1_5": 2048, "RSA-OAEP": 2048, "RSA-OAEP-256": 2048,
+	"A128KW": 128, "A192KW": 192, "A256KW": 256,
+	"dir":     0,
+	"ECDH-ES": 256, "ECDH-ES+A128KW": 128, "ECDH-ES+A192KW": 192, "ECDH-ES+A256KW": 256,
+	"A128GCMKW": 128, "A192GCMKW": 192, "A256GCMKW": 256,
+	"PBES2-HS256+A128KW": 256, "PBES2-HS384+A192KW": 384, "PBES2-HS512+A256KW": 512,
 }
 
 // Creates a new instance of the jwkOctKeyResource.
@@ -42,7 +41,7 @@ type jwkOctKeyModel struct {
 	KID        types.String `tfsdk:"kid"`
 	Use        types.String `tfsdk:"use"`
 	Alg        types.String `tfsdk:"alg"`
-	Size       types.Int64  `tfsdk:"num_bytes"`
+	Size       types.Int64  `tfsdk:"size"`
 	OctKeyJSON types.String `tfsdk:"json"`
 }
 
@@ -68,9 +67,9 @@ func (r *jwkOctKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Required:    true,
 				Description: "Specifies the intended use of the key. Allowed values: `sig` (for signing) and `enc` (for encryption).",
 			},
-			"num_bytes": schema.Int64Attribute{
+			"size": schema.Int64Attribute{
 				Required:    true,
-				Description: "The size of the key in bytes. For symmteric keys, common values are 256, 512, or 1024.",
+				Description: "The size of the key in bits. The size needs to be divisible by 8. You can use Terraform to calcualte bit count for you, like 32 * 8. This provides length of 32 bytes (256 bits)",
 			},
 			"alg": schema.StringAttribute{
 				Optional:    true, // `alg` on optional kenttä
@@ -99,7 +98,10 @@ func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), int(model.Size.ValueInt64()))
+	num_bytes := int(model.Size.ValueInt64()) / 8 // Number of bytes
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(),
+		model.Alg.ValueString(), num_bytes)
+
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -130,7 +132,10 @@ func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(), model.Alg.ValueString(), int(model.Size.ValueInt64()))
+	num_bytes := int(model.Size.ValueInt64()) / 8 // Number of bytes
+	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(),
+		model.Alg.ValueString(), num_bytes)
+
 	if err != nil {
 		resp.Diagnostics.AddError("Symmetric Key Generation Failed", err.Error())
 		return
@@ -157,41 +162,86 @@ func (r *jwkOctKeyResource) Delete(ctx context.Context, req resource.DeleteReque
 // -----------------------------------------------------------------------------
 
 func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data jwkOctKeyModel
+	var model jwkOctKeyModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	log.Printf("Validating use attribute: %s", data.Use.ValueString())
-
 	// Validate 'use' attribute using helper method
-	if !isValid(data.Use.ValueString(), validUses) {
+	if !isValid(model.Use.ValueString(), validUses) {
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'use'",
-			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", data.Use.ValueString()),
+			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", model.Use.ValueString()),
 		)
 		return
 	}
 
+	bits := int(model.Size.ValueInt64())
+
+	// Validate size is divisible by 8
+	if bits%8 != 0 {
+		resp.Diagnostics.AddError(
+			"Invalid attribute value for 'size'",
+			fmt.Sprintf("size must be divisible by 8, got '%s'", model.Size),
+		)
+		return
+	}
+
+	// Validate minimum size
+	if bits < 256 && model.Alg.ValueString() != "none" && model.Alg.ValueString() != "dir" {
+		resp.Diagnostics.AddWarning(
+			"Suspiciously low number of bits",
+			fmt.Sprintf("Expecting at least 256 bits, got '%d' (%d bytes)", bits, bits/8),
+		)
+	}
+
 	// If alg is given, check that it is adhering to specification
-	if !data.Alg.IsNull() && data.Alg.ValueString() != "" {
-		if data.Use.ValueString() == "enc" && !isValid(data.Alg.ValueString(), validOCTEncAlgorithms) {
-			resp.Diagnostics.AddError(
-				"Invalid attribute value for 'alg'",
-				fmt.Sprintf("Expected '%s', got '%s'", validOCTEncAlgorithms, data.Alg.ValueString()),
-			)
-			return
+	if !model.Alg.IsNull() && model.Alg.ValueString() != "" {
+		alg := model.Alg.ValueString()
+
+		// Check if algorithm is valid for 'enc' (encryption) use
+		if model.Use.ValueString() == "enc" {
+			requiredSize, ok := validEncAlgorithms[alg]
+			if !ok {
+				resp.Diagnostics.AddError(
+					"Invalid algorithm",
+					fmt.Sprintf("Algorithm '%s' is not a valid encryption algorithm.", alg),
+				)
+				return
+			}
+
+			// Check if the key size matches the required size for encryption
+			if bits < requiredSize {
+				resp.Diagnostics.AddError(
+					"Invalid key size for 'alg'",
+					fmt.Sprintf("For algorithm '%s', the key size must be at least %d bits (%d bytes).", alg, requiredSize, requiredSize/8),
+				)
+				return
+			}
 		}
 
-		if data.Use.ValueString() == "sig" && !isValid(data.Alg.ValueString(), validOCTSigAlgorithms) {
-			resp.Diagnostics.AddError(
-				"Invalid attribute value for 'alg'",
-				fmt.Sprintf("Expected '%s', got '%s'", validOCTSigAlgorithms, data.Alg.ValueString()),
-			)
-			return
+		// Check if algorithm is valid for 'sig' (signature) use
+		if model.Use.ValueString() == "sig" {
+			requiredSize, ok := validSigAlgorithms[alg]
+			if !ok {
+				resp.Diagnostics.AddError(
+					"Invalid algorithm",
+					fmt.Sprintf("Algorithm '%s' is not a valid signature algorithm.", alg),
+				)
+				return
+			}
+
+			// Check if the key size matches the required size for signature
+			if bits < requiredSize {
+				resp.Diagnostics.AddError(
+					"Invalid key size for 'alg'",
+					fmt.Sprintf("For algorithm '%s', the key size must be at least %d bits (%d bytes).", alg, requiredSize, requiredSize/8),
+				)
+				return
+			}
 		}
 	}
 }

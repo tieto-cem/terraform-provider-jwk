@@ -12,6 +12,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// RSA constants
+var validRSASigAlgorithms = []string{ // RSA-signature algorithms
+	"RS256", "RS384", "RS512",
+}
+
+var validRSAEncAlgorithms = []string{ // RSA encryption algorithms
+	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256",
+}
+
 // Creates a new instance of the jwkRSAKeyResource.
 func NewJwkRSAKeyResource() resource.Resource {
 	return &jwkRSAKeyResource{}
@@ -160,6 +169,17 @@ func (r jwkRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'use'",
 			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", model.Use.ValueString()),
+		)
+		return
+	}
+
+	// Validate, that size is ok
+	bits := int(model.Size.ValueInt64())
+
+	if bits < 2048 || bits%1024 != 0 {
+		resp.Diagnostics.AddError(
+			"Invalid attribute value for 'size'",
+			fmt.Sprintf("size must be at least 2048, and divisible by 1024, got '%s'", model.Size),
 		)
 		return
 	}

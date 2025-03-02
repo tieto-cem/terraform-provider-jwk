@@ -13,28 +13,6 @@ import (
 // Constants
 var validUses = []string{"sig", "enc"} // Allowed values for the "use" attribute
 
-// RSA constants
-var validRSASigAlgorithms = []string{ // RSA-signature algorithms
-	"RS256", "RS384", "RS512",
-}
-
-var validRSAEncAlgorithms = []string{ // RSA encryption algorithms
-	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256",
-}
-
-// Elliptic curve (EC) constants
-var validECSigAlgorithms = []string{ // ECDSA signature algorithms
-	"ES256", "ES384", "ES512",
-}
-
-var validECEncAlgorithms = []string{ // EC encryption algorithms
-	"ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW",
-}
-
-var validECCurves = []string{ // Elliptic curves
-	"P-256", "P-384", "P-521",
-}
-
 // --------------------------------------------------------------------------
 
 // NewProvider creates a new instance of the jwkProvider

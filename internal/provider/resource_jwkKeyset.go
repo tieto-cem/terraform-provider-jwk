@@ -49,7 +49,7 @@ func (r *jwkKeysetResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	KeysetJSON, err := CreateJWKKeyset(model.Keys)
+	KeysetJSON, err := createJWKKeyset(model.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create JWK Keyset", err.Error())
 		return
@@ -75,7 +75,7 @@ func (r *jwkKeysetResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	KeysetJSON, err := CreateJWKKeyset(model.Keys)
+	KeysetJSON, err := createJWKKeyset(model.Keys)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to Create JWK Keysset", err.Error())
 		return

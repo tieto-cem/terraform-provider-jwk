@@ -2,14 +2,14 @@
 resource "jwk_rsa_key" "key1" {
     use = "enc"  
     kid = "enc-1"
-    size = 512
+    size = 2048
     alg = "RSA-OAEP"
 }
 
 resource "jwk_rsa_key" "key2" {
     use = "sig"
     kid = "sig-2"
-    size = 512
+    size = 2048
     alg = "RS256"
 }
 
