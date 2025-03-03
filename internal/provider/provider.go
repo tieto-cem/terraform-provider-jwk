@@ -37,7 +37,6 @@ and key format correctness.
 - **jwk_rsa_key**: Manages RSA keys.
 - **jwk_ec_key**: Manages Elliptic Curve keys.
 - **jwk_oct_key**: Manages symmetric keys.
-- **jwk_okp_keypair**: A resource for creating OKP keypairs
 - **jwk_keyset**: Represents a set of JWK keys, conforming to the JWKS format.
 
 ## Relevant Specifications:
@@ -81,7 +80,7 @@ func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 		NewJwkKeysetResource,
 		NewJwkECKeyResource,
 		NewJwkOctKeyResource,
-		NewJwkOKPKeyResource,
+		//NewJwkOKPKeyResource,
 		NewJwkRSAKeyResource,
 	}
 }
