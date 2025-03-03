@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,12 +12,18 @@ import (
 )
 
 // RSA constants
-var validRSASigAlgorithms = []string{ // RSA-signature algorithms
-	"RS256", "RS384", "RS512",
+
+// Recommended RSA key sizes for different algorithms
+var RSASignatureAlgorithms = map[string]int{
+	"RS256": 2048,
+	"RS384": 3072,
+	"RS512": 4096,
 }
 
-var validRSAEncAlgorithms = []string{ // RSA encryption algorithms
-	"RSA1_5", "RSA-OAEP", "RSA-OAEP-256",
+var RSAEncryptionAlgorithms = map[string]int{
+	"RSA1_5":       2048,
+	"RSA-OAEP":     2048,
+	"RSA-OAEP-256": 2048,
 }
 
 // Creates a new instance of the jwkRSAKeyResource.
@@ -176,45 +181,65 @@ func (r jwkRSAKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 	// Validate, that size is ok
 	bits := int(model.Size.ValueInt64())
 
-	if bits < 2048 || bits%1024 != 0 {
+	if bits < 2048 { // RSA requires at least 2048
 		resp.Diagnostics.AddError(
 			"Invalid attribute value for 'size'",
-			fmt.Sprintf("size must be at least 2048, and divisible by 1024, got '%s'", model.Size),
+			fmt.Sprintf("size must be at least 2048, got '%s'", model.Size),
 		)
 		return
 	}
 
 	// Validate 'alg' attribute for "sig" use case
-	if model.Use.ValueString() == "sig" {
-		if !isValid(model.Alg.ValueString(), validRSASigAlgorithms) {
+	if model.Alg.ValueString() != "" && model.Use.ValueString() == "sig" {
+		expectedSize, exists := RSASignatureAlgorithms[model.Alg.ValueString()]
+
+		if !exists { // Algorithm is not used
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'sig'",
-				fmt.Sprintf("Expected a valid RSA signature algorithm, one of '%s', got '%s'",
-					strings.Join(validRSASigAlgorithms, ", "), model.Alg.ValueString()),
+				fmt.Sprintf("Expected a valid RSA signature algorithm %s, got '%s'",
+					keys(RSASignatureAlgorithms), model.Alg.ValueString()),
 			)
 			return
+		}
+
+		if bits < expectedSize { // If too weak key size, report warning
+			resp.Diagnostics.AddWarning(
+				"Suboptimal RSA key size",
+				fmt.Sprintf("Algorithm '%s' should use at least %d bits. Current size: %d bits.", model.Alg.ValueString(), expectedSize, bits),
+			)
 		}
 	}
 
 	// Validate 'alg' attribute for "enc" use case
 	if model.Alg.ValueString() != "" && model.Use.ValueString() == "enc" {
-		if !isValid(model.Alg.ValueString(), validRSAEncAlgorithms) {
+		_, exists := RSAEncryptionAlgorithms[model.Alg.ValueString()]
+
+		if !exists {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'enc'",
-				fmt.Sprintf("Expected a valid RSA encryption algorithm, one of '%s', got '%s'",
-					strings.Join(validRSAEncAlgorithms, ", "), model.Alg.ValueString()),
+				fmt.Sprintf("Expected a valid RSA encryption algorithm %s, got '%s'",
+					keys(RSAEncryptionAlgorithms), model.Alg.ValueString()),
 			)
 			return
 		}
 	}
 
-	// Issue warning if 'alg' attribute is missing for "enc" use case
-	if model.Alg.ValueString() == "" && model.Use.ValueString() == "enc" {
-		resp.Diagnostics.AddWarning(
-			"No 'alg' attribute for 'enc' use",
-			fmt.Sprintf("Consider setting a valid RSA encryption algorithm, one of '%s'",
-				strings.Join(validRSAEncAlgorithms, ", ")),
-		)
-		return
+	// Issue warning if 'alg' attribute is missing
+	if model.Alg.ValueString() == "" {
+		if model.Use.ValueString() == "enc" {
+			resp.Diagnostics.AddWarning(
+				"No 'alg' attribute for 'enc' use",
+				fmt.Sprintf("Consider setting a valid encryption algorithm, one of '%s'",
+					keys(RSAEncryptionAlgorithms)),
+			)
+			return
+		} else { // use = 'sig'
+			resp.Diagnostics.AddWarning(
+				"No 'alg' attribute for 'sig' use",
+				fmt.Sprintf("Consider setting a valid signing algorithm, one of '%s'",
+					keys(RSASignatureAlgorithms)),
+			)
+			return
+		}
 	}
 }

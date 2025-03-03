@@ -175,7 +175,7 @@ func (r jwkOKPKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 	if model.Use.ValueString() == "sig" {
 		if !isValid(model.Alg.ValueString(), []string{"Ed25519", "Ed448"}) {
 			resp.Diagnostics.AddError(
-				"Invalid algorithm for signature",
+				"Invalid 'alg' attribute for signature",
 				fmt.Sprintf("Expected 'Ed25519' or 'Ed448', got '%s'", model.Alg.ValueString()),
 			)
 			return

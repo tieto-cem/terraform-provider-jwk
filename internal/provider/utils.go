@@ -9,3 +9,14 @@ func isValid(value string, validValues []string) bool {
 	}
 	return false
 }
+
+func keys(m map[string]int) []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+
+	return keys
+}

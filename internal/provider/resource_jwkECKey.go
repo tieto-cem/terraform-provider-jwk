@@ -12,14 +12,30 @@ import (
 )
 
 // Elliptic curve (EC) constants
-var validECSigAlgorithms = []string{ // ECDSA signature algorithms
-	"ES256", "ES384", "ES512",
+
+// On Signing, only specific curves are allowd
+var ECSigningAlgorithmsToCurves = map[string]string{
+	"ES256": "P-256",
+	"ES384": "P-384",
+	"ES512": "P-521",
 }
 
-var validECEncAlgorithms = []string{ // EC encryption algorithms
-	"ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW",
+// On signing, specific sizes are required
+var ECSigAlgorithms = map[string]int{
+	"ES256": 256,
+	"ES384": 384,
+	"ES512": 512,
 }
 
+// On encryption, specific sizes are required
+var ECEncAlgorithms = map[string]int{
+	"ECDH-ES":        256,
+	"ECDH-ES+A128KW": 128,
+	"ECDH-ES+A192KW": 192,
+	"ECDH-ES+A256KW": 256,
+}
+
+// Allowed curves (crv)
 var validECCurves = []string{ // Elliptic curves
 	"P-256", "P-384", "P-521",
 }
@@ -162,46 +178,52 @@ func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.Valid
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	crv := model.Crv.ValueString()
+	alg := model.Alg.ValueString()
+	//bits := int(model.Size.ValueInt64())
 
-	// Validate 'use' attribute using helper method
-	if !isValid(model.Use.ValueString(), validUses) {
-		resp.Diagnostics.AddError(
-			"Invalid attribute value for 'use'",
-			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", model.Use.ValueString()),
-		)
-		return
-	}
-
-	// Validate 'crv' attribute using helper method
-	if !isValid(model.Crv.ValueString(), validECCurves) {
-		resp.Diagnostics.AddError(
-			"Invalid attribute value for 'crv'",
-			fmt.Sprintf("Expected one of '%s', got '%s'", validECCurves, model.Crv.ValueString()),
-		)
-		return
-	}
-
-	// Validate 'alg' attribute for "sig" use case
 	if model.Use.ValueString() == "sig" {
-		if !isValid(model.Alg.ValueString(), validECSigAlgorithms) {
+		// Tarkistetaan, että annettu alg on sallittu signeerauksessa
+		expectedCrv, exists := ECSigningAlgorithmsToCurves[alg]
+		if !exists {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'sig'",
-				fmt.Sprintf("Expected a valid EC signature algorithm, one of '%s', got '%s'",
-					strings.Join(validECSigAlgorithms, ", "), model.Alg.ValueString()),
+				fmt.Sprintf("Expected one of %s, got %s", keys(ECSigAlgorithms), alg),
 			)
 			return
 		}
-	}
 
-	// Validate 'alg' attribute for "enc" use case
-	if model.Alg.ValueString() != "" && model.Use.ValueString() == "enc" {
-		if !isValid(model.Alg.ValueString(), validECEncAlgorithms) {
+		// crv needs to match signing algorithm
+		if crv != expectedCrv {
+			resp.Diagnostics.AddError(
+				"Inconsistent 'crv' for given 'alg'",
+				fmt.Sprintf("Algorithm '%s' requires curve '%s', but got '%s'", alg, expectedCrv, crv),
+			)
+			return
+		}
+	} else if model.Use.ValueString() == "enc" {
+		// Check algorithm
+		_, exists := ECEncAlgorithms[alg]
+		if !exists {
 			resp.Diagnostics.AddError(
 				"Invalid 'alg' attribute for use: 'enc'",
-				fmt.Sprintf("Expected a valid EC encryption algorithm, one of '%s', got '%s'",
-					strings.Join(validECEncAlgorithms, ", "), model.Alg.ValueString()),
+				fmt.Sprintf("Expected one of %s, got %s", keys(ECEncAlgorithms), alg),
 			)
 			return
 		}
+
+		// Encryption needs a valid curve
+		if !isValid(crv, validECCurves) {
+			resp.Diagnostics.AddError(
+				"Invalid 'crv' attribute for use: 'enc'",
+				fmt.Sprintf("Expected one of '%s', got '%s'", strings.Join(validECCurves, ", "), crv),
+			)
+			return
+		}
+	} else {
+		resp.Diagnostics.AddError(
+			"Invalid 'use' attribute",
+			fmt.Sprintf("Expected 'sig' or 'enc', got '%s'", model.Use.ValueString()),
+		)
 	}
 }
