@@ -47,7 +47,6 @@ and key format correctness.
 ## Cryptographic Libraries Used:
 This provider utilizes Go's standard cryptographic libraries for key generation and manipulation:
 - "crypto/ecdsa"
-- "crypto/ed25519"
 - "crypto/elliptic"
 - "crypto/rand"
 - "crypto/rsa"

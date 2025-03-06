@@ -99,7 +99,7 @@ func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	num_bytes := int(model.Size.ValueInt64()) / 8 // Number of bytes
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(),
+	key, err := generateOctJWK(model.KID.ValueString(), model.Use.ValueString(),
 		model.Alg.ValueString(), num_bytes)
 
 	if err != nil {
@@ -133,7 +133,7 @@ func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	num_bytes := int(model.Size.ValueInt64()) / 8 // Number of bytes
-	key, err := generateSymmetricJWK(model.KID.ValueString(), model.Use.ValueString(),
+	key, err := generateOctJWK(model.KID.ValueString(), model.Use.ValueString(),
 		model.Alg.ValueString(), num_bytes)
 
 	if err != nil {

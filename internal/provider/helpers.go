@@ -12,6 +12,30 @@ import (
 	"gopkg.in/square/go-jose.v2"
 )
 
+// isValid checks if a given value is in the list of valid values.
+func isValid(value string, validValues []string) bool {
+	for _, validValue := range validValues {
+		if value == validValue {
+			return true
+		}
+	}
+	return false
+}
+
+// Gets keys of the [string]int map
+func keys(m map[string]int) []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+
+	return keys
+}
+
+// --------------------------------------------------------------
+
 type JWKKeyset struct {
 	Keys []json.RawMessage `json:"keys"`
 }
@@ -108,7 +132,8 @@ func generateOKPJWK(kid, use, alg string) (*jose.JSONWebKey, *jose.JSONWebKey, e
 	return privJWK, pubJWK, nil
 }
 
-func generateSymmetricJWK(kid, use, alg string, num_bytes int) (*jose.JSONWebKey, error) {
+// Create oct key with given parameters
+func generateOctJWK(kid, use, alg string, num_bytes int) (*jose.JSONWebKey, error) {
 	// Create a random key
 	key := make([]byte, num_bytes)
 	_, err := rand.Read(key)
