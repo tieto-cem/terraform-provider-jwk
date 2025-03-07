@@ -6,7 +6,6 @@ resource "jwk_keyset" "set1" {
     ] 
 }
 
-
 output "set1" {
     value = nonsensitive("${jwk_keyset.set1.json}\n")
     sensitive = false

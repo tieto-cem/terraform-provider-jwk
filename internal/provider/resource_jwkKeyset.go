@@ -9,7 +9,7 @@ import (
 )
 
 type KeysetModel struct {
-	Keys       []string     `tfsdk:"keys"`
+	Keys       types.List   `tfsdk:"keys"`
 	KeysetJSON types.String `tfsdk:"json"`
 }
 
@@ -88,4 +88,44 @@ func (r *jwkKeysetResource) Update(ctx context.Context, req resource.UpdateReque
 
 // Delete
 func (r *jwkKeysetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+}
+
+func (r jwkKeysetResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var model KeysetModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	seenKids := make(map[string]bool)
+
+	for _, keyJSON := range model.Keys.Elements() {
+		if keyJSON.IsUnknown() {
+			continue
+		}
+
+		if keyJSON.IsNull() {
+			resp.Diagnostics.AddError("Invalid Key", "Key value is null")
+			continue
+		}
+
+		jsonStr := keyJSON.String()
+		if jsonStr == "" {
+			resp.Diagnostics.AddError("Invalid Key", "Key value is empty")
+			continue
+		}
+
+		key, err := parseJson(jsonStr)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to parse JSON:"+jsonStr, err.Error())
+			continue
+		}
+
+		if seenKids[key.KeyID] {
+			resp.Diagnostics.AddError("Duplicate key id", "Duplicate key id (kid) "+key.KeyID)
+		}
+		seenKids[key.KeyID] = true
+	}
+
 }

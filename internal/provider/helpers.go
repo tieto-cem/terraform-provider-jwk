@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"gopkg.in/square/go-jose.v2"
 )
 
@@ -43,16 +44,24 @@ type JWKKeyset struct {
 // Create JWK Keyset from given keys.
 // The keys are expected to be in JSON format.
 // The function returns the Keyset as a JSON string.
-func createJWKKeyset(keys []string) (string, error) {
-
+func createJWKKeyset(keys types.List) (string, error) {
 	Keyset := JWKKeyset{
-		Keys: make([]json.RawMessage, 0, len(keys)),
+		Keys: make([]json.RawMessage, 0, len(keys.Elements())),
 	}
 
-	for _, keyJSON := range keys {
-		// Parse key JSON, if the JSON is invalid, return an error
+	for _, key := range keys.Elements() {
+		// Muunnetaan attr.Value -> types.String
+		keyStr, ok := key.(types.String)
+		if !ok {
+			return "", fmt.Errorf("unexpected type for key JSON: %T", key)
+		}
+
+		// Hakee string-arvon oikein
+		jsonStr := keyStr.ValueString()
+
+		// Parse JSON, jotta vältytään ylimääräiseltä escapeamiselta
 		var raw json.RawMessage
-		if err := json.Unmarshal([]byte(keyJSON), &raw); err != nil {
+		if err := json.Unmarshal([]byte(jsonStr), &raw); err != nil {
 			return "", fmt.Errorf("invalid key json: %v", err)
 		}
 		Keyset.Keys = append(Keyset.Keys, raw)
@@ -64,6 +73,31 @@ func createJWKKeyset(keys []string) (string, error) {
 	}
 
 	return string(result), nil
+}
+
+func parseJson2(jwkJSON string) (*jose.JSONWebKey, error) {
+	var jwk jose.JSONWebKey
+	err := json.Unmarshal([]byte(jwkJSON), &jwk)
+	if err != nil {
+		return nil, err
+	}
+	return &jwk, nil
+}
+func parseJson(jwkJSON string) (*jose.JSONWebKey, error) {
+	var unescaped string
+	err := json.Unmarshal([]byte(jwkJSON), &unescaped)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unescape JSON string: %w", err)
+	}
+
+	var jwk jose.JSONWebKey
+
+	err = json.Unmarshal([]byte(unescaped), &jwk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWK: %w", err)
+	}
+
+	return &jwk, nil
 }
 
 // Create RSA JWK using given bits, kid, use and alg.
