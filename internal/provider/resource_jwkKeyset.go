@@ -19,6 +19,11 @@ func NewJwkKeysetResource() resource.Resource {
 	return &jwkKeysetResource{}
 }
 
+// Resource Documentation
+func (r *jwkKeysetResource) Documentation() string {
+	return `Manages a JWK key set.`
+}
+
 // Metadata
 func (r *jwkKeysetResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "jwk_keyset"
@@ -31,9 +36,11 @@ func (r *jwkKeysetResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"keys": schema.ListAttribute{ // A list of JSON-strings
 				Required:    true,
 				ElementType: types.StringType,
+				Description: "An array of keys. Each element in array is a Json representation of the key.",
 			},
 			"json": schema.StringAttribute{ // The resulting Keyset JSON
-				Computed: true,
+				Computed:    true,
+				Description: "A Json representation of the JWK key set",
 			},
 		},
 	}

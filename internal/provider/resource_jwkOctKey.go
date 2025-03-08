@@ -47,7 +47,7 @@ type jwkOctKeyModel struct {
 
 // Resource Documentation
 func (r *jwkOctKeyResource) Documentation() string {
-	return `This resource creates and manages symmetric keys for JSON Web Key (JWK) purposes.`
+	return `This resource creates and manages symmetric keys (kty: oct) for JSON Web Key (JWK) purposes.`
 }
 
 // Resource Metadata
