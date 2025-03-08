@@ -1,0 +1,16 @@
+{
+  "name": "jwk-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "ts-node test_keys.ts"
+  },
+  "dependencies": {
+    "jose": "^5.1.2"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  }
+}
+
