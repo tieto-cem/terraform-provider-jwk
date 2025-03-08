@@ -2,7 +2,6 @@ package provider
 
 import (
 	"crypto/ecdsa"
-	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
@@ -137,33 +136,6 @@ func generateECJWK(kid, use, alg, crv string) (*jose.JSONWebKey, error) {
 		Algorithm: alg,
 		KeyID:     kid,
 	}, nil
-}
-
-// Create OKP keys using given kid, use and alg.
-// The function returns the private and public keys as JSONWebKey.
-// First key is the private key and the second key is the public key.
-func generateOKPJWK(kid, use, alg string) (*jose.JSONWebKey, *jose.JSONWebKey, error) {
-
-	publicKey, privKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	privJWK := &jose.JSONWebKey{
-		Key:       privKey,
-		Use:       use,
-		Algorithm: alg,
-		KeyID:     kid,
-	}
-
-	pubJWK := &jose.JSONWebKey{
-		Key:       publicKey,
-		Use:       use,
-		Algorithm: alg,
-		KeyID:     kid,
-	}
-
-	return privJWK, pubJWK, nil
 }
 
 // Create oct key with given parameters
