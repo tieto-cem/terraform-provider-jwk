@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -38,6 +39,9 @@ and key format correctness.
 - **jwk_ec_key**: Manages Elliptic Curve keys.
 - **jwk_oct_key**: Manages symmetric keys.
 - **jwk_keyset**: Represents a set of JWK keys, conforming to the JWKS format.
+
+## Functions
+- **public_key(private_key_json, kid)**: Gets a public key from private key
 
 ## Relevant Specifications:
 - [RFC 7517 - JSON Web Key (JWK)](https://datatracker.ietf.org/doc/html/rfc7517)
@@ -79,7 +83,6 @@ func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 		NewJwkKeysetResource,
 		NewJwkECKeyResource,
 		NewJwkOctKeyResource,
-		//NewJwkOKPKeyResource,
 		NewJwkRSAKeyResource,
 	}
 }
@@ -87,4 +90,11 @@ func (p *jwkProvider) Resources(_ context.Context) []func() resource.Resource {
 // DataSources
 func (p *jwkProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{}
+}
+
+// Functions
+func (p *jwkProvider) Functions(_ context.Context) []func() function.Function {
+	return []func() function.Function{
+		NewPublicKeyFunction,
+	}
 }

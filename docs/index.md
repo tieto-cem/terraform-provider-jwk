@@ -24,6 +24,10 @@ and key format correctness.
 - [jwk_oct_key](resources/jwk_oct_key.md): Manages symmetric keys.
 - [jwk_keyset](resources/jwk_keyset.md): Represents a set of JWK keys, conforming to the JWKS format.
 
+## Functions
+- **public_key(private_key_json, kid)**: Gets a public key from private key
+
+
 ## Relevant Specifications:
 - [RFC 7517 - JSON Web Key (JWK)](https://datatracker.ietf.org/doc/html/rfc7517)
 - [RFC 7518 - JSON Web Algorithms (JWA)](https://datatracker.ietf.org/doc/html/rfc7518)

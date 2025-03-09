@@ -74,14 +74,15 @@ func createJWKKeyset(keys types.List) (string, error) {
 	return string(result), nil
 }
 
-func parseJson2(jwkJSON string) (*jose.JSONWebKey, error) {
+func json2jwk(jwkJSON string) (*jose.JSONWebKey, error) {
 	var jwk jose.JSONWebKey
 	err := json.Unmarshal([]byte(jwkJSON), &jwk)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse JWK: %w", err)
 	}
 	return &jwk, nil
 }
+
 func parseJson(jwkJSON string) (*jose.JSONWebKey, error) {
 	var unescaped string
 	err := json.Unmarshal([]byte(jwkJSON), &unescaped)

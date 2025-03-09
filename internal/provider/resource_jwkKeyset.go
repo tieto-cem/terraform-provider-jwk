@@ -41,6 +41,7 @@ func (r *jwkKeysetResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"json": schema.StringAttribute{ // The resulting Keyset JSON
 				Computed:    true,
 				Description: "A Json representation of the JWK key set",
+				Sensitive:   true,
 			},
 		},
 	}
