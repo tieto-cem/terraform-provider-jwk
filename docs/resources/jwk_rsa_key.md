@@ -30,3 +30,13 @@ encryption algorithm to be used, and the 'size' field specifies the key size in 
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
+
+## Example
+```hcl
+resource "jwk_rsa_key" "key1" {
+    use = "sig"
+    kid = "sig-1"
+    size = 2048
+    alg = "RS256"
+}
+```

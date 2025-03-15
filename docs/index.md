@@ -25,7 +25,7 @@ and key format correctness.
 - [jwk_keyset](resources/jwk_keyset.md): Represents a set of JWK keys, conforming to the JWKS format.
 
 ## Functions
-- **public_key(private_key_json, kid)**: Gets a public key from private key
+- [public_key(private_key_json, kid)](functions/public_key.md): Gets a public key from private key
 
 
 ## Relevant Specifications:
@@ -57,7 +57,7 @@ terraform {
   required_providers {
     jwk = {
       source = "tieto-cem/jwk"
-      version = "0.1.0"
+      version = "1.0.0"
     }
   }
 }

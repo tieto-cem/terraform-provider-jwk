@@ -2,4 +2,5 @@
 terraform.tfstate*
 terraform-provider-*
 
-node_modules
+node_modules/
+dist/

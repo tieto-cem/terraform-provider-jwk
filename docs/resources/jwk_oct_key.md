@@ -26,3 +26,12 @@ This resource creates and manages symmetric keys (kty: oct) for JSON Web Key (JW
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
+
+## Example
+```hcl
+resource "jwk_oct_key" "oct1" {
+    use = "enc"  
+    kid = "oct-1"
+    size = 256
+}
+```

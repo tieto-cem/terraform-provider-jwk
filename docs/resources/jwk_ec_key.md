@@ -28,3 +28,14 @@ encryption algorithm to be used, and the 'crv' field specifies the elliptic curv
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
+
+## Example
+
+```hcl
+resource "jwk_ec_key" "key1" {
+    use = "enc"  
+    kid = "decrypt-1"
+    alg = "ECDH-ES+A128KW"
+    crv = "P-256"
+}
+```
