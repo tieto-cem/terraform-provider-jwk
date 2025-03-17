@@ -2,7 +2,7 @@ The purpose of this project is to provide a Terraform provider around standard g
 cryptographic libraries and go-jose library,which is similar to node-jose library 
 for Node projects.
 
-
+Documentation for this provider is found in [here](docs/index.md)
 
 # Development
 
@@ -95,11 +95,11 @@ export GPG_FINGERPRINT=1234567890ABCDEF
 To release, run following from the terminal
 
 ```sh
-# Test the release makeing first
+# Test the release making first
 goreleaser release --snapshot --clean
 
 # Do the release
-git tag -s v1.0.0 -m "Release v1.0.0"
+git tag -s <version> -m "Release <version>"
 git push --tags
-goreleaser release
+rm -fr dist && goreleaser release
 ```
