@@ -24,7 +24,7 @@ func NewProvider() provider.Provider {
 type jwkProvider struct{}
 
 func (p *jwkProvider) Documentation() string {
-	return `This provider manages JSON Web Keys (JWKs) for use with EC, OKP, RSA and symmetric keys for encryption and signing.
+	return `This provider manages JSON Web Keys (JWKs) for use with EC, RSA and symmetric keys for encryption and signing.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
 and 'use' (key usage). 
 

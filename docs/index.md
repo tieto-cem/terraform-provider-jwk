@@ -8,15 +8,17 @@ description: |-
 
 # jwk Provider
 
-This provider manages JSON Web Keys (JWKs) for use with EC, OKP, RSA and symmetric keys for encryption and signing.
+This provider manages JSON Web Keys (JWKs) for use with EC, RSA and symmetric keys for encryption and signing.
 Keys are represented in JSON format and include various fields, such as 'kid' (key ID), 'alg' (algorithm), 
 and 'use' (key usage). 
 
 Additionally, this provider includes a special resource, 'jwk_keyset', which represents a collection of multiple 
 JWKs in a single JSON Web Key Set (JWKS) structure, following the JSON Web Key (JWK) specification.
 
-This provider ensures that Terraform configurations adhere to cryptographic best practices, including algorithm validation 
-and key format correctness.
+This provider ensures that Terraform configurations adhere to cryptographic best practices, including algorithm validation and key format correctness.
+
+*Note, Private keys created by this provider are stored in clear text in Terraform state.*
+
 
 ## Supported Resources:
 - [jwk_rsa_key](resources/jwk_rsa_key.md): Manages RSA keys.
