@@ -42,6 +42,7 @@ and key format correctness.
 
 ## Functions
 - **public_key(private_key_json, kid)**: Gets a public key from private key
+- **to_pem(jwk_json)**: Converts JWK to PEM format. Supports both RSA and EC keys.
 
 ## Relevant Specifications:
 - [RFC 7517 - JSON Web Key (JWK)](https://datatracker.ietf.org/doc/html/rfc7517)
@@ -96,5 +97,6 @@ func (p *jwkProvider) DataSources(_ context.Context) []func() datasource.DataSou
 func (p *jwkProvider) Functions(_ context.Context) []func() function.Function {
 	return []func() function.Function{
 		NewPublicKeyFunction,
+		NewToPEMFunction,
 	}
 }

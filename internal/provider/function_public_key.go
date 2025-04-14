@@ -66,6 +66,6 @@ func (f *publicKeyFunction) Run(ctx context.Context, req function.RunRequest, re
 		return
 	}
 
-	// Palauta julkinen avain JSON-muodossa
+	// Return public key in json format
 	resp.Error = function.ConcatFuncErrors(resp.Result.Set(ctx, string(publicJWKBytes)))
 }

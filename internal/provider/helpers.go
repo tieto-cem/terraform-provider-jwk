@@ -5,9 +5,15 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
-	"fmt"
+	"encoding/pem"
 
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"gopkg.in/square/go-jose.v2"
 )
@@ -81,6 +87,52 @@ func json2jwk(jwkJSON string) (*jose.JSONWebKey, error) {
 		return nil, fmt.Errorf("failed to parse JWK: %w", err)
 	}
 	return &jwk, nil
+}
+
+/**
+ * Converts JWK to PEM format.
+ * The function takes a JWK object and returns the PEM formatted key as a string.
+ * The function supports RSA and EC keys.
+ * If the key type is not supported, an error is returned.
+ */
+func jwk2pem(jwk *jose.JSONWebKey) (string, error) {
+	var pemBlock *pem.Block
+
+	switch key := jwk.Key.(type) {
+	case *rsa.PrivateKey:
+		pemBlock = &pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		}
+	case *rsa.PublicKey:
+		pemBlock = &pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: x509.MarshalPKCS1PublicKey(key),
+		}
+	case *ecdsa.PrivateKey:
+		derBytes, err := x509.MarshalECPrivateKey(key)
+		if err != nil {
+			return "", function.NewFuncError(fmt.Sprintf("Failed to marshal EC private key: %v", err))
+		}
+		pemBlock = &pem.Block{
+			Type:  "EC PRIVATE KEY",
+			Bytes: derBytes,
+		}
+	case *ecdsa.PublicKey:
+		derBytes, err := x509.MarshalPKIXPublicKey(key)
+		if err != nil {
+			return "", function.NewFuncError(fmt.Sprintf("Failed to marshal EC public key: %v", err))
+		}
+		pemBlock = &pem.Block{
+			Type:  "PUBLIC KEY", // EC public keyt käytetään yleensä tässä muodossa
+			Bytes: derBytes,
+		}
+	default:
+		keyType := reflect.TypeOf(jwk.Key)
+		return "", function.NewFuncError(fmt.Sprintf("Unsupported key type: %v", keyType))
+	}
+
+	return strings.TrimSpace(string(pem.EncodeToMemory(pemBlock))), nil
 }
 
 func parseJson(jwkJSON string) (*jose.JSONWebKey, error) {
