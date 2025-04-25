@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -62,7 +63,12 @@ func (r *jwkRSAKeyResource) Metadata(_ context.Context, _ resource.MetadataReque
 
 // Resource Schema
 func (r *jwkRSAKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	sigAlgs := keys(RSASignatureAlgorithms)
+	encAlgs := keys(RSAEncryptionAlgorithms)
+
 	resp.Schema = schema.Schema{
+		Description: r.Documentation(),
+
 		Attributes: map[string]schema.Attribute{
 			"kid": schema.StringAttribute{
 				Required:    true,
@@ -77,8 +83,11 @@ func (r *jwkRSAKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "The size of the key in bits. For RSA keys, common values are 2048, 3072, or 4096.",
 			},
 			"alg": schema.StringAttribute{
-				Optional:    true,
-				Description: "The cryptographic algorithm associated with the key. For RSA keys, common values include `RS256`, `RS384`, and `RS512` for signing, and `RSA-OAEP`, `RSA-OAEP-256` for encryption.",
+				Optional: true,
+				Description: fmt.Sprintf(
+					"The cryptographic algorithm associated with the key. `%s` for signing, `%s` for encryption",
+					strings.Join(sigAlgs, "`, `"), strings.Join(encAlgs, "`, `"),
+				),
 			},
 			"json": schema.StringAttribute{
 				Computed:    true,

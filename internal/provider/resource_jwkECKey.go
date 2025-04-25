@@ -77,7 +77,12 @@ func (r *jwkECKeyResource) Metadata(_ context.Context, _ resource.MetadataReques
 
 // Resource Schema
 func (r *jwkECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	sigAlgs := keys(ECSigAlgorithms)
+	encAlgs := keys(ECEncAlgorithms)
+
 	resp.Schema = schema.Schema{
+		Description: r.Documentation(),
+
 		Attributes: map[string]schema.Attribute{
 			"kid": schema.StringAttribute{
 				Required:    true,
@@ -92,8 +97,11 @@ func (r *jwkECKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Elliptic curve used for the key. Common values include `P-256`, `P-384`, and `P-521`.",
 			},
 			"alg": schema.StringAttribute{
-				Required:    true,
-				Description: "The cryptographic algorithm associated with the key. For EC keys, common values include `ES256`, `ES384`, and `ES512` for signing, and ECDSA for encrypting.",
+				Optional: true,
+				Description: fmt.Sprintf(
+					"The cryptographic algorithm associated with the key. `%s` for signing, `%s` for encryption",
+					strings.Join(sigAlgs, "`, `"), strings.Join(encAlgs, "`, `"),
+				),
 			},
 			"json": schema.StringAttribute{
 				Computed:    true,
