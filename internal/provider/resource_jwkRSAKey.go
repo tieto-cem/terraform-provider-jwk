@@ -18,6 +18,9 @@ var RSASignatureAlgorithms = map[string]int{
 	"RS256": 2048,
 	"RS384": 3072,
 	"RS512": 4096,
+	"PS256": 2048, // RSA-PSS with SHA-256
+	"PS384": 3072, // RSA-PSS with SHA-384
+	"PS512": 4096, // RSA-PSS with SHA-512
 }
 
 var RSAEncryptionAlgorithms = map[string]int{

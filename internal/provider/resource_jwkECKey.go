@@ -28,11 +28,15 @@ var ECSigAlgorithms = map[string]int{
 }
 
 // On encryption, specific sizes are required
-var ECEncAlgorithms = map[string]int{
-	"ECDH-ES":        256,
-	"ECDH-ES+A128KW": 128,
-	"ECDH-ES+A192KW": 192,
-	"ECDH-ES+A256KW": 256,
+var ECEncAlgorithms = map[string]int{ // ECDH, Elliptic Curve Diffie-Hellman
+	"ECDH-ES":           256, // Ephemeral Static
+	"ECDH-ES+A128KW":    128, // Ephemeral Static with AES Key Wrap 128
+	"ECDH-ES+A192KW":    192, // Ephemeral Static with AES Key Wrap 192
+	"ECDH-ES+A256KW":    256, // Ephemeral Static with AES Key Wrap 256
+	"ECDH-PS":           256, // Pre-Shared Key
+	"ECDH-ES+A128GCMKW": 128, // Ephemeral Static with AES GCM Key Wrap 128
+	"ECDH-ES+A192GCMKW": 192, // Ephemeral Static with AES GCM Key Wrap 192
+	"ECDH-ES+A256GCMKW": 256, // Ephemeral Static with AES GCM Key Wrap 256
 }
 
 // Allowed curves (crv)
@@ -178,12 +182,12 @@ func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.Valid
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	crv := model.Crv.ValueString()
 	alg := model.Alg.ValueString()
-	//bits := int(model.Size.ValueInt64())
 
 	if model.Use.ValueString() == "sig" {
-		// Tarkistetaan, että annettu alg on sallittu signeerauksessa
+		// Check, alg is allowed on 'sig'
 		expectedCrv, exists := ECSigningAlgorithmsToCurves[alg]
 		if !exists {
 			resp.Diagnostics.AddError(
@@ -202,7 +206,7 @@ func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.Valid
 			return
 		}
 	} else if model.Use.ValueString() == "enc" {
-		// Check algorithm
+		// Check, alg is allowed on 'enc'
 		_, exists := ECEncAlgorithms[alg]
 		if !exists {
 			resp.Diagnostics.AddError(
@@ -212,7 +216,7 @@ func (r jwkECKeyResource) ValidateConfig(ctx context.Context, req resource.Valid
 			return
 		}
 
-		// Encryption needs a valid curve
+		// Check crv
 		if !isValid(crv, validECCurves) {
 			resp.Diagnostics.AddError(
 				"Invalid 'crv' attribute for use: 'enc'",

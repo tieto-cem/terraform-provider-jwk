@@ -11,19 +11,19 @@ import (
 )
 
 // Constants for valid algorithms
-var validSigAlgorithms = map[string]int{
+var OCTSignatureAlgorithms = map[string]int{
 	"HS256": 256, "HS384": 384, "HS512": 512,
-	"RS256": 2048, "RS384": 3072, "RS512": 4096,
-	"ES256": 256, "ES384": 384, "ES512": 512,
-	"PS256": 2048, "PS384": 3072, "PS512": 4096,
+	// "RS256": 2048, "RS384": 3072, "RS512": 4096,
+	// "ES256": 256, "ES384": 384, "ES512": 512,
+	// "PS256": 2048, "PS384": 3072, "PS512": 4096,
 	"none": 0,
 }
 
-var validEncAlgorithms = map[string]int{
-	"RSA1_5": 2048, "RSA-OAEP": 2048, "RSA-OAEP-256": 2048,
+var OCTSEncryptionAlgorithms = map[string]int{
+	//	"RSA1_5": 2048, "RSA-OAEP": 2048, "RSA-OAEP-256": 2048,
 	"A128KW": 128, "A192KW": 192, "A256KW": 256,
-	"dir":     0,
-	"ECDH-ES": 256, "ECDH-ES+A128KW": 128, "ECDH-ES+A192KW": 192, "ECDH-ES+A256KW": 256,
+	"dir": 0,
+	//	"ECDH-ES": 256, "ECDH-ES+A128KW": 128, "ECDH-ES+A192KW": 192, "ECDH-ES+A256KW": 256,
 	"A128GCMKW": 128, "A192GCMKW": 192, "A256GCMKW": 256,
 	"PBES2-HS256+A128KW": 256, "PBES2-HS384+A192KW": 384, "PBES2-HS512+A256KW": 512,
 }
@@ -204,7 +204,7 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 
 		// Check if algorithm is valid for 'enc' (encryption) use
 		if model.Use.ValueString() == "enc" {
-			requiredSize, ok := validEncAlgorithms[alg]
+			requiredSize, ok := OCTSEncryptionAlgorithms[alg]
 			if !ok {
 				resp.Diagnostics.AddError(
 					"Invalid algorithm",
@@ -225,7 +225,7 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 
 		// Check if algorithm is valid for 'sig' (signature) use
 		if model.Use.ValueString() == "sig" {
-			requiredSize, ok := validSigAlgorithms[alg]
+			requiredSize, ok := OCTSignatureAlgorithms[alg]
 			if !ok {
 				resp.Diagnostics.AddError(
 					"Invalid algorithm",
