@@ -15,10 +15,20 @@ This resource creates and manages symmetric keys (kty: oct) for JSON Web Key (JW
 
 ### Optional
 
-- `alg` (String) The cryptographic algorithm associated with the key. `HS512`, `none`, `HS256`, `HS384` for signing, `A192KW`, `dir`, `A128GCMKW`, `A256GCMKW`, `PBES2-HS384+A192KW`, `A128KW`, `A192GCMKW`, `PBES2-HS256+A128KW`, `PBES2-HS512+A256KW`, `A256KW` for encryption
+- `alg` (String) The cryptographic algorithm associated with the key. `HS256`, `HS384`, `HS512`, `none` for signing, `A128GCMKW`, `A128KW`, `A192GCMKW`, `A192KW`, `A256GCMKW`, `A256KW`, `PBES2-HS256+A128KW`, `PBES2-HS384+A192KW`, `PBES2-HS512+A256KW`, `dir` for encryption
 
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
 
 
+
+## Example Usage
+
+```hcl
+resource "jwk_oct_key" "oct1" {
+    use = "enc"  
+    kid = "oct-1"
+    size = 256
+}
+```

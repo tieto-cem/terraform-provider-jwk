@@ -19,10 +19,31 @@ encryption algorithm to be used, and the 'size' field specifies the key size in 
 
 ### Optional
 
-- `alg` (String) The cryptographic algorithm associated with the key. `PS512`, `RS256`, `RS384`, `RS512`, `PS256`, `PS384` for signing, `RSA1_5`, `RSA-OAEP`, `RSA-OAEP-256` for encryption
+- `alg` (String) The cryptographic algorithm associated with the key. `PS256`, `PS384`, `PS512`, `RS256`, `RS384`, `RS512` for signing, `RSA-OAEP`, `RSA-OAEP-256`, `RSA1_5` for encryption
 
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
 
 
+
+## Example Usage
+
+```hcl
+resource "jwk_rsa_key" "key1" {
+    use = "sig"
+    kid = "sig-1"
+    size = 2048
+    alg = "RS256"
+}
+
+output "rsa_key" {
+  value = jwk_rsa_key.key1.json
+  sensitive = true
+}
+
+output "rsa_public_key" {
+  value = "${nonsensitive(provider::jwk::public_key(jwk_rsa_key.key1.json, "ver-1"))}\n"
+  sensitive = false
+}
+```

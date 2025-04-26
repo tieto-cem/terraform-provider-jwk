@@ -19,10 +19,31 @@ encryption algorithm to be used, and the 'crv' field specifies the elliptic curv
 
 ### Optional
 
-- `alg` (String) The cryptographic algorithm associated with the key. `ES256`, `ES384`, `ES512` for signing, `ECDH-ES+A256KW`, `ECDH-PS`, `ECDH-ES+A128GCMKW`, `ECDH-ES+A192GCMKW`, `ECDH-ES+A256GCMKW`, `ECDH-ES`, `ECDH-ES+A128KW`, `ECDH-ES+A192KW` for encryption
+- `alg` (String) The cryptographic algorithm associated with the key. `ES256`, `ES384`, `ES512` for signing, `ECDH-ES`, `ECDH-ES+A128GCMKW`, `ECDH-ES+A128KW`, `ECDH-ES+A192GCMKW`, `ECDH-ES+A192KW`, `ECDH-ES+A256GCMKW`, `ECDH-ES+A256KW`, `ECDH-PS` for encryption
 
 ### Read-Only
 
 - `json` (String, Sensitive) The JSON representation of the key in JWK (JSON Web Key) format. This value is automatically generated.
 
 
+
+## Example Usage
+
+```hcl
+resource "jwk_ec_key" "key1" {
+    use = "enc"  
+    kid = "decrypt-1"
+    alg = "ECDH-ES+A128KW"
+    crv = "P-256"
+}
+
+output "ec_key" {
+  value = jwk_ec_key.key1.json
+  sensitive = true
+}
+
+output "ec_public_key" {
+  value = "${nonsensitive(provider::jwk::public_key(jwk_ec_key.key1.json, "encrypt-1"))}\n"
+  sensitive = false
+}
+```

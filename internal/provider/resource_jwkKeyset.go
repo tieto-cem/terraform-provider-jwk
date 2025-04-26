@@ -21,7 +21,7 @@ func NewJwkKeysetResource() resource.Resource {
 
 // Resource Documentation
 func (r *jwkKeysetResource) Documentation() string {
-	return `Manages a JWK key set.`
+	return `Manages a JWK key set. Key sets are used to represent a set of JSON Web Keys (JWKs) in a single JSON object.`
 }
 
 // Metadata

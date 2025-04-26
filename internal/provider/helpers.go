@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"gopkg.in/square/go-jose.v2"
@@ -31,6 +32,7 @@ func keys(m map[string]int) []string {
 		i++
 	}
 
+	sort.Strings(keys)
 	return keys
 }
 

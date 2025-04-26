@@ -57,10 +57,7 @@ This provider utilizes Go's standard cryptographic libraries for key generation 
 
 ## Additional libraries
 Following important external libraries are also used
-- "gopkg.in/square/go-jose.v2"
-
-By using this provider, you can securely manage cryptographic keys within Terraform, ensuring compliance with 
-modern security standards.`
+- "gopkg.in/square/go-jose.v2"`
 }
 
 // Metadata
@@ -70,7 +67,9 @@ func (p *jwkProvider) Metadata(_ context.Context, _ provider.MetadataRequest, re
 
 // Schema
 func (p *jwkProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{}
+	resp.Schema = schema.Schema{
+		Description: p.Documentation(),
+	}
 }
 
 // Configure
