@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -11,19 +12,14 @@ import (
 )
 
 // Constants for valid algorithms
-var validSigAlgorithms = map[string]int{
+var OCTSignatureAlgorithms = map[string]int{
 	"HS256": 256, "HS384": 384, "HS512": 512,
-	"RS256": 2048, "RS384": 3072, "RS512": 4096,
-	"ES256": 256, "ES384": 384, "ES512": 512,
-	"PS256": 2048, "PS384": 3072, "PS512": 4096,
 	"none": 0,
 }
 
-var validEncAlgorithms = map[string]int{
-	"RSA1_5": 2048, "RSA-OAEP": 2048, "RSA-OAEP-256": 2048,
+var OCTSEncryptionAlgorithms = map[string]int{
 	"A128KW": 128, "A192KW": 192, "A256KW": 256,
-	"dir":     0,
-	"ECDH-ES": 256, "ECDH-ES+A128KW": 128, "ECDH-ES+A192KW": 192, "ECDH-ES+A256KW": 256,
+	"dir":       0,
 	"A128GCMKW": 128, "A192GCMKW": 192, "A256GCMKW": 256,
 	"PBES2-HS256+A128KW": 256, "PBES2-HS384+A192KW": 384, "PBES2-HS512+A256KW": 512,
 }
@@ -57,7 +53,12 @@ func (r *jwkOctKeyResource) Metadata(_ context.Context, _ resource.MetadataReque
 
 // Resource Schema
 func (r *jwkOctKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	sigAlgs := keys(OCTSignatureAlgorithms)
+	encAlgs := keys(OCTSEncryptionAlgorithms)
+
 	resp.Schema = schema.Schema{
+		Description: r.Documentation(),
+
 		Attributes: map[string]schema.Attribute{
 			"kid": schema.StringAttribute{
 				Required:    true,
@@ -72,9 +73,13 @@ func (r *jwkOctKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "The size of the key in bits. The size needs to be divisible by 8. You can use Terraform to calcualte bit count for you, like 32 * 8. This provides length of 32 bytes (256 bits)",
 			},
 			"alg": schema.StringAttribute{
-				Optional:    true, // `alg` on optional kenttä
-				Description: "The cryptographic algorithm associated with the key, such as 'HS256', 'HS384', 'HS512'.",
+				Optional: true,
+				Description: fmt.Sprintf(
+					"The cryptographic algorithm associated with the key. `%s` for signing, `%s` for encryption",
+					strings.Join(sigAlgs, "`, `"), strings.Join(encAlgs, "`, `"),
+				),
 			},
+
 			"json": schema.StringAttribute{
 				Computed:    true,
 				Sensitive:   true,
@@ -204,7 +209,7 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 
 		// Check if algorithm is valid for 'enc' (encryption) use
 		if model.Use.ValueString() == "enc" {
-			requiredSize, ok := validEncAlgorithms[alg]
+			requiredSize, ok := OCTSEncryptionAlgorithms[alg]
 			if !ok {
 				resp.Diagnostics.AddError(
 					"Invalid algorithm",
@@ -225,7 +230,7 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 
 		// Check if algorithm is valid for 'sig' (signature) use
 		if model.Use.ValueString() == "sig" {
-			requiredSize, ok := validSigAlgorithms[alg]
+			requiredSize, ok := OCTSignatureAlgorithms[alg]
 			if !ok {
 				resp.Diagnostics.AddError(
 					"Invalid algorithm",

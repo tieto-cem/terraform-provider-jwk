@@ -32,6 +32,8 @@ func (r *jwkKeysetResource) Metadata(_ context.Context, _ resource.MetadataReque
 // Schema
 func (r *jwkKeysetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: r.Documentation(),
+
 		Attributes: map[string]schema.Attribute{
 			"keys": schema.ListAttribute{ // A list of JSON-strings
 				Required:    true,

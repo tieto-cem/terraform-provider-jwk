@@ -54,6 +54,11 @@ cd examples
 terraform plan
 ```
 
+There is also some go tests in internal/provider folder. Those can be run 
+```bash
+go test -v ./internal/provider
+```
+
 # Releasing
 
 ## Pre-requisities
@@ -97,6 +102,10 @@ To release, run following from the terminal
 ```sh
 # Test the release making first
 goreleaser release --snapshot --clean
+
+# At this point, check if there are any updates on docs/* files with `git status`
+# If there are, add generated documentation into git.
+# As of now, we want to have those also in version control
 
 # Do the release
 git tag -s <version> -m "Release <version>"
