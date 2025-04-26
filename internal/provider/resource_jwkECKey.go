@@ -33,7 +33,6 @@ var ECEncAlgorithms = map[string]int{ // ECDH, Elliptic Curve Diffie-Hellman
 	"ECDH-ES+A128KW":    128, // Ephemeral Static with AES Key Wrap 128
 	"ECDH-ES+A192KW":    192, // Ephemeral Static with AES Key Wrap 192
 	"ECDH-ES+A256KW":    256, // Ephemeral Static with AES Key Wrap 256
-	"ECDH-PS":           256, // Pre-Shared Key
 	"ECDH-ES+A128GCMKW": 128, // Ephemeral Static with AES GCM Key Wrap 128
 	"ECDH-ES+A192GCMKW": 192, // Ephemeral Static with AES GCM Key Wrap 192
 	"ECDH-ES+A256GCMKW": 256, // Ephemeral Static with AES GCM Key Wrap 256
