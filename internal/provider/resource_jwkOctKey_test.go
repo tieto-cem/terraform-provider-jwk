@@ -53,7 +53,6 @@ func TestOctKey_AlgForSignature(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						// Luo resurssi kullekin alg-arvolle
 						Config: fmt.Sprintf(`
 resource "jwk_oct_key" "example" {
   kid = "test-key"
@@ -61,7 +60,7 @@ resource "jwk_oct_key" "example" {
   alg  = "%s"
   size = "%d"
 }
-						`, alg, size), // Tämä asettaa "alg"-arvon dynaamisesti
+						`, alg, size),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("jwk_oct_key.example", "kid", "test-key"),
 							resource.TestCheckResourceAttr("jwk_oct_key.example", "alg", alg),
@@ -88,7 +87,6 @@ func TestOctKey_AlgForEncryption(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						// Luo resurssi kullekin alg-arvolle
 						Config: fmt.Sprintf(`
 resource "jwk_oct_key" "example" {
   kid = "test-key"
@@ -96,7 +94,7 @@ resource "jwk_oct_key" "example" {
   alg  = "%s"
   size = "%d"
 }
-						`, alg, size), // Tämä asettaa "alg"-arvon dynaamisesti
+						`, alg, size),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("jwk_oct_key.example", "kid", "test-key"),
 							resource.TestCheckResourceAttr("jwk_oct_key.example", "alg", alg),
