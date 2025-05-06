@@ -132,10 +132,10 @@ func (r jwkKeysetResource) ValidateConfig(ctx context.Context, req resource.Vali
 			continue
 		}
 
-		if seenKids[key.KeyID] {
-			resp.Diagnostics.AddError("Duplicate key id", "Duplicate key id (kid) "+key.KeyID)
+		if seenKids[key.KeyID()] {
+			resp.Diagnostics.AddError("Duplicate key id", "Duplicate key id (kid) "+key.KeyID())
 		}
-		seenKids[key.KeyID] = true
+		seenKids[key.KeyID()] = true
 	}
 
 }

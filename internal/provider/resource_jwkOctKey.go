@@ -146,7 +146,6 @@ func (r *jwkOctKeyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	//keyJSON, err := json.MarshalIndent(key, "", "  ")
 	keyJSON, err := json.Marshal(key)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create symmetric key", err.Error())

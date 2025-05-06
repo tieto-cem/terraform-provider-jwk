@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.14.1
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
+	github.com/lestrrat-go/jwx/v2 v2.1.5
 )
 
 require (
@@ -12,6 +13,8 @@ require (
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
@@ -26,10 +29,16 @@ require (
 	github.com/hashicorp/terraform-exec v0.22.0 // indirect
 	github.com/hashicorp/terraform-json v0.24.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.3 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/httprc v1.0.6 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/zclconf/go-cty v1.16.2 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
@@ -62,5 +71,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/grpc v1.69.4 // indirect
 	google.golang.org/protobuf v1.36.3 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0
 )

@@ -123,7 +123,6 @@ func TestRSAKey_AlgForSignature(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						// Luo resurssi kullekin alg-arvolle
 						Config: fmt.Sprintf(`
 resource "jwk_rsa_key" "example" {
   kid  = "test-key"
@@ -131,7 +130,7 @@ resource "jwk_rsa_key" "example" {
   alg  = "%s"
   size = 2048
 }
-						`, alg), // Tämä asettaa "alg"-arvon dynaamisesti
+						`, alg),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("jwk_rsa_key.example", "kid", "test-key"),
 							resource.TestCheckResourceAttr("jwk_rsa_key.example", "alg", alg),
@@ -157,7 +156,6 @@ func TestRSAKey_AlgForEncryption(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						// Luo resurssi kullekin alg-arvolle
 						Config: fmt.Sprintf(`
 resource "jwk_rsa_key" "example" {
   kid  = "test-key"
@@ -165,7 +163,7 @@ resource "jwk_rsa_key" "example" {
   alg  = "%s"
   size = 2048
 }
-						`, alg), // Tämä asettaa "alg"-arvon dynaamisesti
+						`, alg),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("jwk_rsa_key.example", "kid", "test-key"),
 							resource.TestCheckResourceAttr("jwk_rsa_key.example", "alg", alg),

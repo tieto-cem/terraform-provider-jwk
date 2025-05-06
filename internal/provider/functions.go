@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/hashicorp/terraform-plugin-framework/function"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 type publicKeyFunction struct{}
@@ -54,10 +55,14 @@ func (f *publicKeyFunction) Run(ctx context.Context, req function.RunRequest, re
 		return
 	}
 
-	publicJWK := privateJWK.Public()
+	publicJWK, err := privateJWK.PublicKey()
+	if err != nil {
+		resp.Error = &function.FuncError{Text: "Failed to extract public key from private key: " + err.Error()}
+		return
+	}
 
 	if kid != "" { // If kid has been given assign it to kid field of public_key
-		publicJWK.KeyID = kid
+		publicJWK.Set(jwk.KeyIDKey, kid)
 	}
 
 	publicJWKBytes, err := json.Marshal(publicJWK)
@@ -66,6 +71,6 @@ func (f *publicKeyFunction) Run(ctx context.Context, req function.RunRequest, re
 		return
 	}
 
-	// Palauta julkinen avain JSON-muodossa
+	// Return the public key as a string
 	resp.Error = function.ConcatFuncErrors(resp.Result.Set(ctx, string(publicJWKBytes)))
 }
