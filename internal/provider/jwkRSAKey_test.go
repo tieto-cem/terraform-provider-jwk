@@ -174,3 +174,42 @@ resource "jwk_rsa_key" "example" {
 		})
 	}
 }
+
+func TestJwkRSAKeyResource_Import(t *testing.T) {
+	os.Setenv("TF_ACC", "1")
+	defer os.Unsetenv("TF_ACC")
+
+	testKey := `{
+        "kid": "imported-rsa-key",
+        "kty": "RSA",
+        "use": "sig",
+        "alg": "RS256",
+		"n": "pfbsBaYrVHqNFFgzBF_t5MDKdN5hyjgTvRZh8xSLxnE82SJUrZuQn8lw9dNI1whatKtJIDjiiXCcSqH3AAQSh2JRfMvOf8EayuCSE9Jq3cNQ5rDtD7GBZQfVNziToEsgYrod3UDhaGRIWsF1KNG0dP6GwvxfBWacx93v7SPmUUfKUFgPDfkOpViJr2TLGkMSibGDXj4NOAjOAD9IRbCC43KP-bZMVLbK0llUKLmTEa1o7JCLR-GnmCOBO91nPavokES1LfC3Cvn1MuODJ6RoiH0nU7uvl8xAa8DG-Vsf8s9sJ3X7fCMXZlvV3EEiMhzgyA54EiULVBfUwsTKVM_8_iIPwVwg6z7vpXVv1xLfSKK0tsr-qvCn9zxuk8wqQM9xaCpuDnuqjr97k_E8p4yQX3K_0ZB7BOoJodmQDMLdgI_2Qbkys1Sb-1ehJwwAZ458OpOaeU6opkFyMmQkUHqIB8Mya48io0Gd-cm9UAbu1f94inLz8EKilSXtA2CRHPkCpUp_9NtXMrSyxNDDXhEIH_BdJMyeupuqFQ3gCe69syogHbCJypp_DY3r65vK5oVXbCrCZP198xyup5Gw8uRnZuBZBNMtlQWjTf0SfnkR4f6r1wq-YNJcadaWw1Lvq1wwnYg1hOaJarOM6tEOSTpr1-QUcTprcorY987_krbHj0k",
+		"e": "AQAB"
+		}`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"jwk": providerserver.NewProtocol6WithError(provider.NewProvider()),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: `provider "jwk" {}
+				resource "jwk_rsa_key" "test" {
+				# (resource arguments)
+				}`,
+				ImportState:                          true,
+				ImportStateId:                        testKey,
+				ImportStateVerify:                    false,
+				ImportStateVerifyIdentifierAttribute: "kid",
+				ResourceName:                         "jwk_rsa_key.test",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("jwk_rsa_key.test", "kid", "imported-rsa-key"),
+					resource.TestCheckResourceAttr("jwk_rsa_key.test", "use", "sig"),
+					resource.TestCheckResourceAttr("jwk_rsa_key.test", "alg", "RS256"),
+					resource.TestCheckResourceAttrSet("jwk_rsa_key.test", "json"),
+				),
+			},
+		},
+	})
+}
