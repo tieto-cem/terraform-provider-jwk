@@ -26,3 +26,12 @@ output "ec_public_key" {
   sensitive = false
 }
 ```
+
+## Importing
+
+You can import an EC key by providing the json representation of the key. 
+The key must be in the JWK format and should be a valid EC key. 
+
+```hcl
+terraform import jwk_ec_key.key1 '{"kty":"EC","use":"enc","kid":"decrypt-1","alg":"ECDH-ES+A128KW","crv":"P-256","x":"...","y":"..."}'
+```

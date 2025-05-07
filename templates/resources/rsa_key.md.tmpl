@@ -26,3 +26,13 @@ output "rsa_public_key" {
   sensitive = false
 }
 ```
+
+## Importing
+
+You can import a RSA key by providing the json representation of the key. 
+The key must be in the JWK format and should be a valid RSA key. 
+
+```hcl
+terraform import jwk_rsa_key.sig '{"kty":"RSA","kid":"sig-1","use":"sig","alg":"RS256","e":"AQAB","n":"...","d":"...","p":"...","q":"...","dp":"...","dq":"...","qi":"..."}'
+```
+

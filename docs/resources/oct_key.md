@@ -32,3 +32,12 @@ resource "jwk_oct_key" "oct1" {
     size = 256
 }
 ```
+
+## Importing
+
+You can import an Oct key by providing the json representation of the key. 
+The key must be in the JWK format and should be a valid Oct key. 
+
+```hcl
+terraform import jwk_oct_key.oct1 '{"kid":"oct-1","kty":"oct","use":"enc","k":"..."}'
+```

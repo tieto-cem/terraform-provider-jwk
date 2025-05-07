@@ -19,7 +19,7 @@ encryption algorithm to be used, and the 'crv' field specifies the elliptic curv
 
 ### Optional
 
-- `alg` (String) The cryptographic algorithm associated with the key. `ES256`, `ES384`, `ES512` for signing, `ECDH-ES`, `ECDH-ES+A128GCMKW`, `ECDH-ES+A128KW`, `ECDH-ES+A192GCMKW`, `ECDH-ES+A192KW`, `ECDH-ES+A256GCMKW`, `ECDH-ES+A256KW`, `ECDH-PS` for encryption
+- `alg` (String) The cryptographic algorithm associated with the key. `ES256`, `ES384`, `ES512` for signing, `ECDH-ES`, `ECDH-ES+A128GCMKW`, `ECDH-ES+A128KW`, `ECDH-ES+A192GCMKW`, `ECDH-ES+A192KW`, `ECDH-ES+A256GCMKW`, `ECDH-ES+A256KW` for encryption
 
 ### Read-Only
 
@@ -46,4 +46,13 @@ output "ec_public_key" {
   value = "${nonsensitive(provider::jwk::public_key(jwk_ec_key.key1.json, "encrypt-1"))}\n"
   sensitive = false
 }
+```
+
+## Importing
+
+You can import an EC key by providing the json representation of the key. 
+The key must be in the JWK format and should be a valid EC key. 
+
+```hcl
+terraform import jwk_ec_key.key1 '{"kty":"EC","use":"enc","kid":"decrypt-1","alg":"ECDH-ES+A128KW","crv":"P-256","x":"...","y":"..."}'
 ```
