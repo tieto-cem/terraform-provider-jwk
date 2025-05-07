@@ -216,14 +216,6 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
-	// Validate minimum size
-	if bits < 256 && model.Alg.ValueString() != "none" && model.Alg.ValueString() != "dir" {
-		resp.Diagnostics.AddWarning(
-			"Suspiciously low number of bits",
-			fmt.Sprintf("Expecting at least 256 bits, got '%d' (%d bytes)", bits, bits/8),
-		)
-	}
-
 	// If alg is given, check that it is adhering to specification
 	if !model.Alg.IsNull() && model.Alg.ValueString() != "" {
 		alg := model.Alg.ValueString()
@@ -267,6 +259,34 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 					fmt.Sprintf("For algorithm '%s', the key size must be at least %d bits (%d bytes).", alg, requiredSize, requiredSize/8),
 				)
 				return
+			}
+		}
+	}
+
+	// Validate minimum size (only warn for sizes below general security recommendation)
+	if model.Alg.ValueString() != "none" && model.Alg.ValueString() != "dir" {
+		// Default security recommendation is 256 bits
+		securityRecommendation := 256
+
+		// Only show warning if below recommendation and not explicitly allowed by algorithm
+		if bits < securityRecommendation {
+			// Check if this is explicitly allowed by algorithm requirements
+			allowed := false
+			if model.Use.ValueString() == "enc" {
+				if size, ok := OCTSEncryptionAlgorithms[model.Alg.ValueString()]; ok && size <= bits {
+					allowed = true
+				}
+			} else if model.Use.ValueString() == "sig" {
+				if size, ok := OCTSignatureAlgorithms[model.Alg.ValueString()]; ok && size <= bits {
+					allowed = true
+				}
+			}
+
+			if !allowed {
+				resp.Diagnostics.AddWarning(
+					"Potentially insecure key size",
+					fmt.Sprintf("General security recommendation is at least %d bits, got '%d' bits", securityRecommendation, bits),
+				)
 			}
 		}
 	}
