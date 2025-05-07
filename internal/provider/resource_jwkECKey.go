@@ -143,9 +143,6 @@ func (r *jwkECKeyResource) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *jwkECKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-}
-
 // Update is identical to Create, so we could reuse some code here
 func (r *jwkECKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var model jwkECKeyModel
@@ -175,6 +172,130 @@ func (r *jwkECKeyResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *jwkECKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+}
+
+// ImportState
+func (r *jwkECKeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Read imported JWK Json
+	var jwk map[string]interface{}
+	if err := json.Unmarshal([]byte(req.ID), &jwk); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK JSON",
+			fmt.Sprintf("Could not parse imported JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	// Check mandatory fields
+	kid, ok := jwk["kid"].(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Key ID",
+			"Imported JWK must contain 'kid' field",
+		)
+		return
+	}
+
+	use, ok := jwk["use"].(string)
+	if !ok || (use != "sig" && use != "enc") {
+		resp.Diagnostics.AddError(
+			"Missing or invalid Use",
+			"Imported JWK must contain valid 'use' field ('sig' or 'enc')",
+		)
+		return
+	}
+
+	crv, ok := jwk["crv"].(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Curve",
+			"Imported EC JWK must contain 'crv' field",
+		)
+		return
+	}
+
+	// Make sure it is an EC key
+	if kty, ok := jwk["kty"].(string); !ok || kty != "EC" {
+		resp.Diagnostics.AddError(
+			"Invalid Key Type",
+			"Imported JWK must be of type 'EC'",
+		)
+		return
+	}
+
+	// Hanedle optional algorithm
+	alg := ""
+	if a, ok := jwk["alg"].(string); ok {
+		alg = a
+	}
+
+	// Validate curve
+	if !isValid(crv, validECCurves) {
+		resp.Diagnostics.AddError(
+			"Invalid Curve",
+			fmt.Sprintf("Unsupported curve '%s'. Valid curves are: %v", crv, validECCurves),
+		)
+		return
+	}
+
+	if use == "sig" {
+		if alg != "" {
+			expectedCrv, exists := ECSigningAlgorithmsToCurves[alg]
+			if exists && crv != expectedCrv {
+				resp.Diagnostics.AddError(
+					"Incompatible Algorithm and Curve",
+					fmt.Sprintf("Algorithm '%s' requires curve '%s'", alg, expectedCrv),
+				)
+				return
+			}
+		}
+	} else if use == "enc" {
+		if alg != "" {
+			_, exists := ECEncAlgorithms[alg]
+			if !exists {
+				resp.Diagnostics.AddError(
+					"Invalid Encryption Algorithm",
+					fmt.Sprintf("Unsupported encryption algorithm '%s'", alg),
+				)
+				return
+			}
+		}
+	}
+
+	model := jwkECKeyModel{
+		KID:     types.StringValue(kid),
+		Use:     types.StringValue(use),
+		Crv:     types.StringValue(crv),
+		Alg:     types.StringValue(alg),
+		KeyJSON: types.StringValue(req.ID),
+	}
+
+	// Store model to state
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
+}
+
+// Read
+func (r *jwkECKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var model jwkECKeyModel
+
+	diags := req.State.Get(ctx, &model)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate the JWK JSON from state
+	var key map[string]interface{}
+	if err := json.Unmarshal([]byte(model.KeyJSON.ValueString()), &key); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK in state",
+			fmt.Sprintf("Could not parse stored JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	diags = resp.State.Set(ctx, model)
+	resp.Diagnostics.Append(diags...)
 }
 
 // -----------------------------------------------------------------------------
