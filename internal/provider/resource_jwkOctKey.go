@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -125,6 +126,27 @@ func (r *jwkOctKeyResource) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (r *jwkOctKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var model jwkOctKeyModel
+
+	diags := req.State.Get(ctx, &model)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Verify the key is still valid by parsing it
+	var key map[string]interface{}
+	if err := json.Unmarshal([]byte(model.OctKeyJSON.ValueString()), &key); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK in state",
+			fmt.Sprintf("Could not parse stored JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	// Update any computed values if needed
+	diags = resp.State.Set(ctx, model)
+	resp.Diagnostics.Append(diags...)
 }
 
 // Update is identical to Create, so we could reuse some code here
@@ -194,14 +216,6 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
-	// Validate minimum size
-	if bits < 256 && model.Alg.ValueString() != "none" && model.Alg.ValueString() != "dir" {
-		resp.Diagnostics.AddWarning(
-			"Suspiciously low number of bits",
-			fmt.Sprintf("Expecting at least 256 bits, got '%d' (%d bytes)", bits, bits/8),
-		)
-	}
-
 	// If alg is given, check that it is adhering to specification
 	if !model.Alg.IsNull() && model.Alg.ValueString() != "" {
 		alg := model.Alg.ValueString()
@@ -248,4 +262,110 @@ func (r jwkOctKeyResource) ValidateConfig(ctx context.Context, req resource.Vali
 			}
 		}
 	}
+
+	// Validate minimum size (only warn for sizes below general security recommendation)
+	if model.Alg.ValueString() != "none" && model.Alg.ValueString() != "dir" {
+		// Default security recommendation is 256 bits
+		securityRecommendation := 256
+
+		// Only show warning if below recommendation and not explicitly allowed by algorithm
+		if bits < securityRecommendation {
+			// Check if this is explicitly allowed by algorithm requirements
+			allowed := false
+			if model.Use.ValueString() == "enc" {
+				if size, ok := OCTSEncryptionAlgorithms[model.Alg.ValueString()]; ok && size <= bits {
+					allowed = true
+				}
+			} else if model.Use.ValueString() == "sig" {
+				if size, ok := OCTSignatureAlgorithms[model.Alg.ValueString()]; ok && size <= bits {
+					allowed = true
+				}
+			}
+
+			if !allowed {
+				resp.Diagnostics.AddWarning(
+					"Potentially insecure key size",
+					fmt.Sprintf("General security recommendation is at least %d bits, got '%d' bits", securityRecommendation, bits),
+				)
+			}
+		}
+	}
+}
+
+func (r *jwkOctKeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Parse the imported JSON
+	var jwk map[string]interface{}
+	if err := json.Unmarshal([]byte(req.ID), &jwk); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK JSON",
+			fmt.Sprintf("Could not parse imported JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	// Validate required fields
+	kid, ok := jwk["kid"].(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Key ID",
+			"Imported JWK must contain 'kid' field",
+		)
+		return
+	}
+
+	use, ok := jwk["use"].(string)
+	if !ok || (use != "sig" && use != "enc") {
+		resp.Diagnostics.AddError(
+			"Missing or invalid Use",
+			"Imported JWK must contain valid 'use' field ('sig' or 'enc')",
+		)
+		return
+	}
+
+	// Validate key type
+	if kty, ok := jwk["kty"].(string); !ok || kty != "oct" {
+		resp.Diagnostics.AddError(
+			"Invalid Key Type",
+			"Imported JWK must be of type 'oct'",
+		)
+		return
+	}
+
+	// Get optional algorithm
+	alg := ""
+	if a, ok := jwk["alg"].(string); ok {
+		alg = a
+	}
+
+	// Calculate key size from k length
+	size := 0
+	if k, ok := jwk["k"].(string); ok {
+		keyBytes, err := base64.RawURLEncoding.DecodeString(k)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid Key Material",
+				fmt.Sprintf("Could not decode 'k' parameter: %s", err.Error()),
+			)
+			return
+		}
+		size = len(keyBytes) * 8
+	} else {
+		resp.Diagnostics.AddError(
+			"Missing Key Material",
+			"Imported OCT JWK must contain 'k' field",
+		)
+		return
+	}
+
+	// Create the model
+	model := jwkOctKeyModel{
+		KID:        types.StringValue(kid),
+		Use:        types.StringValue(use),
+		Alg:        types.StringValue(alg),
+		Size:       types.Int64Value(int64(size)),
+		OctKeyJSON: types.StringValue(req.ID),
+	}
+
+	// Save to state
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
 }

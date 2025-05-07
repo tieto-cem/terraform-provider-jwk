@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -130,9 +131,6 @@ func (r *jwkRSAKeyResource) Create(ctx context.Context, req resource.CreateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *jwkRSAKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-}
-
 // Update is identical to Create, so we could reuse some code here
 func (r *jwkRSAKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var model jwkRSAKeyModel
@@ -162,6 +160,95 @@ func (r *jwkRSAKeyResource) Update(ctx context.Context, req resource.UpdateReque
 }
 
 func (r *jwkRSAKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+}
+
+func (r *jwkRSAKeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Parse the imported JSON
+	var jwk map[string]interface{}
+	if err := json.Unmarshal([]byte(req.ID), &jwk); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK JSON",
+			fmt.Sprintf("Could not parse imported JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	// Extract required fields
+	kid, ok := jwk["kid"].(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Key ID",
+			"Imported JWK must contain 'kid' field",
+		)
+		return
+	}
+
+	use, ok := jwk["use"].(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Use",
+			"Imported JWK must contain 'use' field (either 'sig' or 'enc')",
+		)
+		return
+	}
+
+	// Extract optional fields
+	alg := ""
+	if a, ok := jwk["alg"].(string); ok {
+		alg = a
+	}
+
+	// Calculate key size (approximate)
+	size := 0
+	if n, ok := jwk["n"].(string); ok {
+		// Decode base64url encoded modulus
+		data, err := base64.RawURLEncoding.DecodeString(n)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid Modulus",
+				fmt.Sprintf("Could not decode 'n' parameter: %s", err.Error()),
+			)
+			return
+		}
+		// Approximate key size in bits
+		size = len(data) * 8
+	}
+
+	// Create the model
+	model := jwkRSAKeyModel{
+		KID:        types.StringValue(kid),
+		Use:        types.StringValue(use),
+		Alg:        types.StringValue(alg),
+		Size:       types.Int64Value(int64(size)),
+		RSAKeyJSON: types.StringValue(req.ID),
+	}
+
+	// Save to state
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
+}
+
+func (r *jwkRSAKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var model jwkRSAKeyModel
+
+	diags := req.State.Get(ctx, &model)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Verify the key is still valid by parsing it
+	var key map[string]interface{}
+	if err := json.Unmarshal([]byte(model.RSAKeyJSON.ValueString()), &key); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid JWK in state",
+			fmt.Sprintf("Could not parse stored JWK: %s", err.Error()),
+		)
+		return
+	}
+
+	// Update any computed values if needed
+	diags = resp.State.Set(ctx, model)
+	resp.Diagnostics.Append(diags...)
 }
 
 // -----------------------------------------------------------------------------

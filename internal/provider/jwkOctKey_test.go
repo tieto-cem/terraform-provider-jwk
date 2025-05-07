@@ -106,3 +106,38 @@ resource "jwk_oct_key" "example" {
 		})
 	}
 }
+
+func TestJwkOctKeyResource_Import(t *testing.T) {
+	os.Setenv("TF_ACC", "1")
+	defer os.Unsetenv("TF_ACC")
+
+	testKey := `{
+        "kid": "imported-oct-key",
+        "kty": "oct",
+        "use": "sig",
+        "alg": "HS256",
+        "k": "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow"
+    }`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"jwk": providerserver.NewProtocol6WithError(provider.NewProvider()),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:            `resource "jwk_oct_key" "test" {}`,
+				ImportState:       true,
+				ImportStateId:     testKey,
+				ImportStateVerify: false,
+				ResourceName:      "jwk_oct_key.test",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("jwk_oct_key.test", "kid", "imported-oct-key"),
+					resource.TestCheckResourceAttr("jwk_oct_key.test", "use", "sig"),
+					resource.TestCheckResourceAttr("jwk_oct_key.test", "alg", "HS256"),
+					resource.TestCheckResourceAttr("jwk_oct_key.test", "size", "256"),
+					resource.TestCheckResourceAttrSet("jwk_oct_key.test", "json"),
+				),
+			},
+		},
+	})
+}
